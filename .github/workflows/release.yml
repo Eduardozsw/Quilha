@@ -1,0 +1,109 @@
+name: Release
+
+# Tag `v*` gera os instaladores dos três sistemas e anexa a um release em rascunho (publicar é à mão).
+# Rodar à mão (workflow_dispatch) só gera os instaladores como artefatos, sem release.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  instalador:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04      # glibc mais antiga: o AppImage roda em mais distros
+            bundles: appimage,deb
+          - os: windows-latest
+            bundles: nsis,msi
+          - os: macos-14          # Apple Silicon
+            bundles: app,dmg
+          - os: macos-15-intel    # Intel; PyInstaller não faz build cruzado
+            bundles: app,dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependências do Tauri (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Backend congelado (PyInstaller)
+        run: |
+          uv sync --locked --group empacotamento
+          uv run --group empacotamento pyinstaller packaging/quilha-backend.spec --noconfirm
+
+      - name: Diagnóstico do binário (schema e PDF, sem LLM)
+        shell: bash
+        env:
+          HERMES_HOME: ${{ runner.temp }}/quilha-home
+        run: dist/quilha-backend/quilha-backend diagnostico
+
+      - name: Teste de fumaça da API
+        shell: bash
+        env:
+          HERMES_HOME: ${{ runner.temp }}/quilha-home
+          HERMES_API_TOKEN: ci
+        run: |
+          dist/quilha-backend/quilha-backend serve --port 18765 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:18765/api/saude && break; sleep 1; done
+          curl -sf -H "X-Hermes-Token: ci" http://127.0.0.1:18765/api/config
+          kill %1
+
+      - name: Backend para dentro do Tauri
+        shell: bash
+        run: |
+          mkdir -p desktop/src-tauri/backend
+          cp -a dist/quilha-backend/. desktop/src-tauri/backend/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      - name: Dependências do front
+        working-directory: desktop
+        run: npm ci
+
+      - name: Instaladores (release em rascunho)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: Quilha ${{ github.ref_name }}
+          releaseBody: Veja o README para instalar e para os avisos do SmartScreen e do Gatekeeper.
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          args: --bundles ${{ matrix.bundles }}
+
+      - name: Instaladores (só artefatos)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        working-directory: desktop
+        run: npm run tauri build -- --bundles ${{ matrix.bundles }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: quilha-${{ matrix.os }}
+          path: desktop/src-tauri/target/release/bundle/

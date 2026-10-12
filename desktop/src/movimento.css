@@ -1,0 +1,27 @@
+/* Movimento da V3 (spec §6), copiado do protótipo aprovado: curva, durações e coreografia sem simplificar.
+   Só transform e opacity; `prefers-reduced-motion` e `.sem-movimento` (Aparência) viram troca instantânea. */
+
+/* trocar de tela: o conteúdo novo entra com fade e sobe 6 px; a lateral fica parada */
+.entrando { animation: entra var(--t) var(--ease) both; }
+@keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* selecionar na lista: o documento troca com fade curto */
+.troca { animation: troca var(--t-curto) var(--ease) both; }
+@keyframes troca { from { opacity: 0; } to { opacity: 1; } }
+
+/* cartões que chegam (resposta da conversa, resultado): crescem de .98 */
+.cresce { transform-origin: top left; animation: cresce var(--t) var(--ease) both; }
+@keyframes cresce { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+
+/* trecho do streaming: fade de 260 ms no ritmo real do SSE */
+.frase { animation: troca 260ms var(--ease) both; }
+
+.sem-movimento *, .sem-movimento *::before, .sem-movimento *::after {
+  animation-duration: 1ms !important; transition-duration: 1ms !important;
+}
+/* "Nunca" em Aparência (`.com-movimento`) mantém o movimento mesmo com o sistema pedindo para reduzir */
+@media (prefers-reduced-motion: reduce) {
+  :root:not(.com-movimento) *, :root:not(.com-movimento) *::before, :root:not(.com-movimento) *::after {
+    animation-duration: 1ms !important; transition-duration: 1ms !important;
+  }
+}

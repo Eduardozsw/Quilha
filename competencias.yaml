@@ -1,0 +1,106 @@
+# Taxonomia de competências do Quilha: a lista do que você quer conseguir provar, não do que já prova.
+#
+# Esta é uma lista de partida para quem trabalha com software. Tire o que não serve, acrescente o que as vagas
+# que você procura pedem e ajuste o `peso`: 3 = núcleo das vagas-alvo, 2 = importante, 1 = periférico.
+# Pelo app, a tela Competências faz isso sem abrir o arquivo. Na CLI: `hermes comp seed` (idempotente pelo slug).
+#
+# categoria: linguagem | dados | automacao | ia | processo | idioma | soft
+
+competencias:
+  # --- linguagem ---
+  - slug: python
+    nome: Python
+    categoria: linguagem
+    peso: 2
+  - slug: javascript
+    nome: JavaScript
+    categoria: linguagem
+    peso: 2
+  - slug: typescript
+    nome: TypeScript
+    categoria: linguagem
+    peso: 2
+  - slug: java
+    nome: Java
+    categoria: linguagem
+    peso: 2
+
+  # --- dados ---
+  - slug: sql
+    nome: SQL
+    categoria: dados
+    peso: 2
+  - slug: modelagem-relacional
+    nome: Modelagem relacional
+    categoria: dados
+    peso: 2
+  - slug: analise-de-dados
+    nome: Análise de dados
+    categoria: dados
+    peso: 2
+
+  # --- automação e engenharia ---
+  - slug: apis-rest
+    nome: APIs REST
+    categoria: automacao
+    peso: 2
+  - slug: front-end
+    nome: Front-end web
+    categoria: automacao
+    peso: 2
+  - slug: testes-automatizados
+    nome: Testes automatizados
+    categoria: automacao
+    peso: 2
+  - slug: ci-cd
+    nome: CI e deploy reproduzível
+    categoria: automacao
+    peso: 2
+  - slug: containers
+    nome: Containers
+    categoria: automacao
+    peso: 2
+  - slug: cloud
+    nome: Cloud
+    categoria: automacao
+    peso: 2
+  - slug: git
+    nome: Git e revisão de código
+    categoria: processo
+    peso: 2
+
+  # --- ia ---
+  - slug: llm-aplicado
+    nome: LLM aplicado a produto
+    categoria: ia
+    peso: 2
+
+  # --- processo ---
+  - slug: documentacao-tecnica
+    nome: Documentação técnica
+    categoria: processo
+    peso: 2
+  - slug: requisitos-stakeholders
+    nome: Levantamento de requisitos com stakeholders
+    categoria: processo
+    peso: 2
+  - slug: metodos-ageis
+    nome: Métodos ágeis
+    categoria: processo
+    peso: 2
+
+  # --- idioma ---
+  - slug: ingles
+    nome: Inglês
+    categoria: idioma
+    peso: 2
+
+  # --- soft ---
+  - slug: comunicacao
+    nome: Comunicação
+    categoria: soft
+    peso: 2
+  - slug: trabalho-em-equipe
+    nome: Trabalho em equipe
+    categoria: soft
+    peso: 2

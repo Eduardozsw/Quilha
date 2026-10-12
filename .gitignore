@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+data/
+denylist.yaml
+out/
+fontes.yaml
+curriculos.yaml
+mcp.yaml
+.playwright-mcp/
+
+# PyInstaller
+build/
+dist/
+
+# saída do comparador de triagem (tests/fixtures/triagem/comparar.py)
+tests/fixtures/triagem/resultado.json

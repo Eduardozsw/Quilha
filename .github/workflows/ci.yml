@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Instalar dependências
+        run: uv sync --locked
+      - name: Testes
+        run: uv run pytest
+      - name: Schema aplica e consultas rodam
+        run: |
+          uv run python -c "from hermes.db import store; store.connect('ci.db')"
+          grep -v '^\.' hermes/sql/queries.sql | sqlite3 ci.db

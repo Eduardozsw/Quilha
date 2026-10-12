@@ -1,0 +1,28 @@
+Aurora Saúde Digital — Analista de Automação (RPA)
+
+A Aurora Saúde Digital faz software de agenda, prontuário e faturamento para clínicas pequenas. Nossos
+produtos rodam no dia a dia das clínicas, do agendamento ao repasse dos convênios.
+
+O que você vai fazer
+- Projetar, construir e manter automações (RPA).
+- Automatizar workflows operacionais repetitivos de várias áreas.
+- Integrar sistemas internos e de terceiros via APIs e plataformas de automação.
+- Diagnosticar, monitorar e melhorar automações existentes.
+- Documentar processos de automação e soluções técnicas.
+- Entender requisitos com stakeholders.
+- Identificar oportunidades de ganho de eficiência com automação.
+- Apoiar testes, deploy e manutenção.
+- Aprender novas tecnologias de IA e automação.
+
+Requisitos
+- 0 a 2 anos de experiência.
+- Graduação (ou cursando) em Computação ou área relacionada.
+- Python, JavaScript ou C# básico.
+- Familiaridade com APIs (desejável).
+- SQL e bancos relacionais básicos.
+- Análise e resolução de problemas.
+- Boa comunicação.
+- Autonomia em ambiente de startup.
+
+Diferencial
+- Inglês.

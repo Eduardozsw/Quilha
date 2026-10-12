@@ -1,0 +1,14 @@
+# Servidores MCP do Quilha. Copie para mcp.yaml (gitignored) e edite.
+#
+# Cada servidor é um comando que fala MCP por stdio. `tools` é a allowlist: só essas entram no chat,
+# mesmo que o servidor exponha outras. Não existe "todas" — servidor externo não ganha acesso ao
+# agente por ter tool nova.
+#
+# Exemplo: um servidor de notícias seu, no contrato da seção "Notícias (ou outras tools) via MCP" do
+# README. Troque o caminho e o módulo pelos do seu servidor.
+
+servidores:
+  - nome: noticias
+    comando: [uv, run, --project, /caminho/do/servidor, python, -m, servidor_mcp]
+    tools: [news_today, search_news]
+    timeout_s: 20

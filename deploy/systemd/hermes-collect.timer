@@ -1,0 +1,11 @@
+[Unit]
+Description=Quilha: coleta de vagas a cada 6 horas
+
+[Timer]
+OnCalendar=*-*-* 00/6:17:00
+# o computador dorme: ao acordar, roda a coleta que ficou para trás (só funciona com OnCalendar)
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

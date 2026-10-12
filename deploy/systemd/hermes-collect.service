@@ -1,0 +1,15 @@
+# Coleta de vagas do Quilha (rodando do código-fonte). Instalação (usuário, sem root):
+#   cp deploy/systemd/hermes-collect.* ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now hermes-collect.timer
+# Acompanhar: journalctl --user -u hermes-collect  ·  hermes job fila  ·  hermes stats
+[Unit]
+Description=Quilha: coleta de vagas (Greenhouse, Lever)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# a pasta onde você clonou o Quilha
+WorkingDirectory=%h/quilha
+# sem --extrair: a coleta agendada nunca gasta crédito de LLM
+ExecStart=/usr/bin/uv run hermes job collect

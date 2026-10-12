@@ -1,0 +1,9 @@
+# Termos que NUNCA podem sair da máquina para uma API de LLM.
+# Copie para denylist.yaml e edite. O arquivo real é ignorado pelo Git.
+#
+# `hermes check` varre o vault e o texto de vagas coladas. Se encontrar qualquer
+# um destes termos, o comando falha e nada é enviado até você resolver.
+termos:
+  # - nome de sistema interno do empregador
+  # - identificador de beneficiário
+  # - nome de cliente

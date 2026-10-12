@@ -1,0 +1,31 @@
+# Fontes do coletor de vagas (`hermes job collect`). Copie para fontes.yaml (gitignored) e edite.
+#
+# Onde achar o `board`:
+#   greenhouse: a URL da vaga é boards.greenhouse.io/<board>/jobs/... ou job-boards.greenhouse.io/<board>
+#   lever:      a URL da vaga é jobs.lever.co/<board>/...
+#   gupy:       o subdomínio da página de carreiras, <board>.gupy.io
+# LinkedIn não entra: proíbe acesso automatizado.
+#
+# `filtro` compara com o TÍTULO da vaga, sem acento e sem caixa. Precisa ter um termo de `incluir`
+# (lista vazia = aceita tudo) e nenhum de `excluir`. Uma fonte pode ter o próprio `filtro`.
+# `intervalo_h`: de quanto em quanto tempo a fonte é coletada de novo (padrão 24).
+
+intervalo_h: 24
+
+filtro:
+  incluir: []                     # ex.: [python, dados, backend, junior] — vazio aceita qualquer título
+  excluir: []                     # ex.: [senior, staff, lead]
+
+fontes:
+  - tipo: greenhouse
+    board: nome-do-board          # troque pelo board real
+    empresa: Empresa Exemplo
+  - tipo: lever
+    board: nome-da-empresa        # troque pelo board real
+    empresa: Outra Empresa
+    intervalo_h: 12
+    filtro:
+      incluir: []                 # esta fonte aceita qualquer título
+      excluir: [senior]
+  - tipo: gupy
+    board: nome-da-empresa        # de nome-da-empresa.gupy.io

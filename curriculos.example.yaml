@@ -1,0 +1,61 @@
+# Perfis de currículo: recortes do mesmo vault. Copie para `curriculos.yaml` e ajuste.
+#
+# O perfil só muda peso e ordem. Continua valendo a regra do vault: só entra fato de competência
+# com nível ≥ 2 e evidência. Competência não listada entra com `peso × peso_fora_do_perfil`.
+# `projetos.primeiro` / `excluir` usam o `id` do frontmatter das notas de projeto.
+#
+# `habilidades` são as linhas da seção, na ordem. Item é texto ou `{pt, en}` quando precisa de
+# tradução. Declaração não é fato: `hermes check` avisa item que nenhuma nota sustenta (stack ou tag).
+# `nomes` traduz o slug do `stack` das notas para o nome que aparece no currículo.
+#
+# Sem `curriculos.yaml` não há perfis: o currículo geral continua funcionando.
+# Conferir: `hermes cv perfis`. Gerar: `hermes cv draft --perfil <slug>` ou pela tela Currículos.
+# PDF: `hermes cv pdf --perfil <slug>`.
+
+nomes:
+  docker: Docker
+  fastapi: FastAPI
+  github-actions: GitHub Actions
+  pandas: Pandas
+  postgresql: PostgreSQL
+  pytest: pytest
+  python: Python
+  sqlite: SQLite
+
+perfis:
+  - slug: backend
+    cargo: {pt: "Desenvolvedor Backend", en: "Backend Developer"}
+    foco: >
+      APIs confiáveis em Python, com banco relacional bem modelado, testes e entrega contínua.
+    competencias:
+      python: 3
+      apis-rest: 3
+      sql: 2
+      testes-automatizados: 2
+      ci-cd: 2
+    peso_fora_do_perfil: 0.5
+    projetos: {primeiro: [meu-projeto-api], excluir: []}
+    habilidades:
+      - rotulo: {pt: "Backend", en: "Backend"}
+        itens: [Python (FastAPI), REST/OpenAPI]
+      - rotulo: {pt: "Bancos e infra", en: "Databases & infra"}
+        itens: [PostgreSQL, SQLite, Docker, GitHub Actions]
+    limite_fatos: 12
+
+  - slug: dados
+    cargo: {pt: "Analista de Dados", en: "Data Analyst"}
+    foco: >
+      Coleta, modelagem e análise de dados com Python e SQL, com métricas medidas e fonte declarada.
+    competencias:
+      analise-de-dados: 3
+      sql: 3
+      modelagem-relacional: 2
+      python: 2
+    peso_fora_do_perfil: 0.5
+    projetos: {primeiro: [], excluir: [meu-projeto-api]}
+    habilidades:
+      - rotulo: {pt: "Dados", en: "Data"}
+        itens: [Python, Pandas, SQL]
+      - rotulo: {pt: "Ferramentas", en: "Tools"}
+        itens: [pytest, Git, Docker]
+    limite_fatos: 12
