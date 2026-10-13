@@ -68,3 +68,9 @@ def test_cardapio_nao_repete_vaga_e_marca_empresa_onde_ja_se_candidatou(conn):
     assert primeira["vezes"] == 2 and primeira["anunciada_em"].startswith("2026-09-25")
     assert primeira["alerta"] == "Engenheiro de software · Campinas"
     assert [v["ja_candidatou"] for v in vagas] == [False, True, False]
+
+
+def test_ja_candidatou_reconhece_a_empresa_escrita_de_outro_jeito(conn):
+    _alerta(conn, "g1", "2026-09-20T10:00:00+00:00")
+    cand.registrar_manual(conn, "Delta Sistemas Tech", "geral")
+    assert {v["empresa"]: v["ja_candidatou"] for v in anuncios.listar(conn)}["Delta Sistemas"] is True

@@ -792,3 +792,43 @@ def test_religar_outra_vaga_devolve_a_anterior_para_as_abertas(conn):
     cand.ligar_vaga(conn, cid, nova)
     status = dict(conn.execute("SELECT id, status FROM jobs WHERE id IN (?, ?)", (antiga, nova)).fetchall())
     assert (status[antiga], status[nova]) == ("analisado", "aplicado")
+
+
+# --- mesma empresa escrita de jeitos diferentes ------------------------------------
+
+
+@pytest.mark.parametrize("a, b, esperado", [
+    ("apollo solutions dev", "apollosolutions", True),   # remetente do ATS × domínio do RH (Apollo, 13/10)
+    ("tech lab", "techlab", True),                        # só os espaços mudam
+    ("quartzo", "quartzo", True),
+    ("banco inter tech", "banco inter labs", True),       # sobra "banco inter" nos dois
+    ("tech lab", "tech dev", False),                      # tirar a palavra genérica deixaria só "tech"
+    ("techlab", "techdev", False),
+    ("apollo", "apollo solutions", False),                # uma palavra só não basta
+    ("orbital dev", "orbital", False),
+    ("", "", False),
+])
+def test_mesma_empresa(a, b, esperado):
+    assert cand.mesma_empresa(a, b) is esperado
+    assert cand.mesma_empresa(b, a) is esperado
+
+
+def test_email_do_ats_liga_na_pingada_do_dominio(conn):
+    primeira = cand.ligar(conn, _email(conn, "avanco", "apollosolutions", "2026-10-02T00:00:00+00:00"))
+    segunda = cand.ligar(conn, _email(conn, "avanco", "Apollo Solutions Dev", "2026-10-13T00:00:00+00:00"))
+    assert segunda == primeira
+    assert conn.execute("SELECT COUNT(*) FROM candidaturas").fetchone()[0] == 1
+
+
+def test_empresas_parecidas_continuam_separadas(conn):
+    lab = cand.ligar(conn, _email(conn, "avanco", "Tech Lab", "2026-10-02T00:00:00+00:00"))
+    dev = cand.ligar(conn, _email(conn, "avanco", "Tech Dev", "2026-10-03T00:00:00+00:00"))
+    assert lab != dev
+
+
+def test_parecidas_acha_a_mesma_empresa_escrita_diferente(conn):
+    estagio = cand.registrar_do_cv(conn, _vaga(conn, empresa="Apollo Solutions"), "geral", None)
+    pid = cand.ligar(conn, _email(conn, "inscricao_confirmada", "Apollo Solutions Dev"))
+    assert pid == estagio  # já liga direto na candidatura do currículo
+    outra = cand.nova_do_email(conn, _email(conn, "avanco", "Apollo Solutions Dev", gid="g-novo"))
+    assert [p["id"] for p in cand.parecidas(conn, outra)] == [estagio]

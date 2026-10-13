@@ -63,6 +63,34 @@ def normalizar_empresa(texto: str | None) -> str:
     return " ".join(s.split())
 
 
+# palavra que pode sobrar no fim do nome sem mudar a empresa ("Apollo Solutions Dev" = apollosolutions.dev)
+_CAUDA_GENERICA = {"dev", "devs", "lab", "labs", "tech", "tecnologia", "technology", "technologies", "digital",
+                   "software", "sistemas", "systems", "io", "app", "apps", "hq", "co", "company", "br"}
+
+
+def _variantes(norm: str) -> set[str]:
+    """Formas sem espaço do nome que contam como a mesma empresa. A palavra genérica do fim só sai enquanto sobram
+    duas palavras ou mais: "tech lab" e "tech dev" virariam os dois "tech", que não identifica ninguém."""
+    palavras = norm.split()
+    formas = {"".join(palavras)} if palavras else set()
+    while len(palavras) > 2 and palavras[-1] in _CAUDA_GENERICA:
+        palavras = palavras[:-1]
+        formas.add("".join(palavras))
+    return formas
+
+
+def mesma_empresa(a: str | None, b: str | None) -> bool:
+    """Duas chaves de `normalizar_empresa` são da mesma empresa? Iguais sem os espaços ("tech lab" = "techlab"),
+    ou iguais depois de tirar a palavra genérica do fim sem ficar com uma palavra só."""
+    return bool(_variantes(a or "") & _variantes(b or ""))
+
+
+def _da_empresa(conn: sqlite3.Connection, norm: str, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
+    """As linhas de `sql` (que traz `empresa_norm`) da mesma empresa que `norm`. São poucas candidaturas: o
+    filtro fica aqui, onde mora a regra, e não no SQL."""
+    return [r for r in conn.execute(sql, params) if mesma_empresa(norm, r["empresa_norm"])]
+
+
 # ATS, redes e provedores pessoais: o domínio nunca é a empresa
 _DOMINIOS_ATS = ("gupy.com.br", "recrut.ai", "inhire.app", "greenhouse-mail.io", "greenhouse.io",
                  "myworkday.com", "workday.com", "ashbyhq.com", "lever.co", "linkedin.com",
@@ -374,11 +402,11 @@ def ligar(conn: sqlite3.Connection, email_id: int) -> int | None:
     norm = normalizar_empresa(email["empresa_extraida"])
     if categoria not in PROCESSO or not norm:
         return None
-    candidatas = conn.execute(
-        "SELECT c.id, c.titulo, c.status, (SELECT MAX(e.recebido_em) FROM emails e"
+    candidatas = _da_empresa(
+        conn, norm,
+        "SELECT c.id, c.titulo, c.status, c.empresa_norm, (SELECT MAX(e.recebido_em) FROM emails e"
         "  WHERE e.candidatura_id = c.id AND COALESCE(e.rotulo_manual, e.final) = 'reprovado')"
-        " AS reprovada_em FROM candidaturas c WHERE c.empresa_norm = ? AND c.status != 'cancelada'",
-        (norm,)).fetchall()
+        " AS reprovada_em FROM candidaturas c WHERE c.status != 'cancelada'")
     abertas = [c for c in candidatas if not (
         c["status"] == "reprovada" and (c["reprovada_em"] or "") < email["recebido_em"])]
     if categoria != "reprovado" or abertas:
@@ -506,8 +534,8 @@ def _estado_antes(conn, email_id, categoria, candidatura_id, nova, empresa) -> d
     cid = candidatura_id
     if cid is None:
         norm = normalizar_empresa(empresa or email(conn, email_id)["empresa_extraida"])
-        linhas = conn.execute("SELECT id FROM candidaturas WHERE empresa_norm = ? AND status != 'cancelada'",
-                              (norm,)).fetchall() if norm else []
+        linhas = _da_empresa(conn, norm, "SELECT id, empresa_norm FROM candidaturas WHERE status != 'cancelada'") \
+            if norm else []
         cid = linhas[0]["id"] if len(linhas) == 1 else None
     if cid is None:
         return None
@@ -626,10 +654,11 @@ def parecidas(conn: sqlite3.Connection, candidatura_id: int) -> list[dict]:
     if not _e_pingada(c) or not c["empresa_norm"]:
         return []
     marcas = ", ".join("?" * len(ATIVAS_OU_A_ENVIAR))
-    return [dict(r) for r in conn.execute(
-        f"SELECT id, titulo, empresa, status FROM candidaturas WHERE empresa_norm = ? AND id != ?"
+    return [{k: r[k] for k in ("id", "titulo", "empresa", "status")} for r in _da_empresa(
+        conn, c["empresa_norm"],
+        f"SELECT id, titulo, empresa, status, empresa_norm FROM candidaturas WHERE id != ?"
         f" AND status IN ({marcas}) ORDER BY enviada_em DESC, id DESC",
-        (c["empresa_norm"], candidatura_id, *ATIVAS_OU_A_ENVIAR))]
+        (candidatura_id, *ATIVAS_OU_A_ENVIAR))]
 
 
 def juntar(conn: sqlite3.Connection, origem_id: int, destino_id: int) -> dict:

@@ -72,6 +72,7 @@ def listar(conn: sqlite3.Connection) -> list[dict]:
                 "anunciada_em": e["recebido_em"],
                 "alerta": f"{alerta.group(1)} · {alerta.group(2)}" if alerta else None,
                 "vezes": 1,
-                "ja_candidatou": candidaturas.normalizar_empresa(v["empresa"]) in empresas,
+                "ja_candidatou": any(candidaturas.mesma_empresa(candidaturas.normalizar_empresa(v["empresa"]), empresa)
+                                     for empresa in empresas),
             }
     return list(vistas.values())
