@@ -354,7 +354,7 @@ def test_job_add_sem_texto_explica_como_colar(cfg_tmp, mocker):
     mocker.patch("hermes.cli._tem_terminal", return_value=True)
     resultado = runner.invoke(app, ["job", "add"])
     assert resultado.exit_code == 2
-    assert "hermes job add -" in resultado.output
+    assert "quilha job add -" in resultado.output
 
 
 def test_job_match_sem_texto_imprime_n_e_formula(cfg_tmp, banco, vaga_arquivo, extracao):
@@ -390,7 +390,7 @@ def test_job_map_e_show(cfg_tmp, banco, vaga_arquivo, extracao):
 def test_job_extrair_refaz_e_mostra_o_custo(cfg_tmp, banco, vaga_arquivo, extracao):
     runner.invoke(app, ["job", "add", str(vaga_arquivo)])
     repetida = runner.invoke(app, ["job", "add", str(vaga_arquivo)])
-    assert "hermes job extrair 1" in repetida.output
+    assert "quilha job extrair 1" in repetida.output
 
     resultado = runner.invoke(app, ["job", "extrair", "1"])
 
@@ -433,7 +433,7 @@ def test_study_git_e_confirm(cfg_tmp, banco, tmp_path, monkeypatch):
     git = runner.invoke(app, ["study", "git"])
     assert git.exit_code == 0, git.output
     assert "worker com retry" in git.output
-    assert "hermes study confirm" in git.output
+    assert "quilha study confirm" in git.output
 
     confirma = runner.invoke(app, ["study", "confirm", "1", "60", "retry com backoff", "-c", "python"])
     assert confirma.exit_code == 0, confirma.output
@@ -511,7 +511,7 @@ def test_job_collect_registra_run_parcial_e_fila(cfg_tmp, banco, fontes_yaml, at
     r = runner.invoke(app, ["job", "collect"])
     assert r.exit_code == 0, r.output
     assert "2 de 2 fonte(s) processada(s); 1 vaga(s) nova(s)" in r.output
-    assert "hermes job extrair" in r.output
+    assert "quilha job extrair" in r.output
 
     conn = store.connect(cfg_tmp.db_path)
     run = conn.execute("SELECT status, started_at FROM runs WHERE comando = 'job collect'").fetchone()
@@ -632,3 +632,18 @@ def test_chat_ctrl_c_para_o_turno_sem_sair(cfg_tmp, provedor, mocker):
     conn = store.connect(cfg_tmp.db_path)
     assert [r["content"] for r in conn.execute("SELECT content FROM agent_messages ORDER BY idx")] == ["compara", "Comparando "]
     conn.close()
+
+
+def test_quilha_e_hermes_chamam_o_mesmo_app():
+    import tomllib
+
+    from hermes import caminhos
+
+    pyproject = tomllib.loads((caminhos.PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["name"] == "Quilha"  # o nome que o PyPI mostra; `uvx quilha` também acha
+    assert pyproject["project"]["scripts"] == {"quilha": "hermes.cli:app", "hermes": "hermes.cli:app"}
+
+
+def test_ajuda_fala_quilha():
+    resultado = runner.invoke(app, ["--help"])
+    assert "Quilha" in resultado.output

@@ -1,4 +1,4 @@
-"""API local do app desktop (`hermes serve`). Só escuta em 127.0.0.1.
+"""API local do app desktop (`quilha serve`). Só escuta em 127.0.0.1.
 
 Cada rota é uma casca fina sobre a mesma função de `hermes/domain` que a CLI chama: regra de
 negócio não mora aqui. O token por execução impede que uma página qualquer aberta no navegador

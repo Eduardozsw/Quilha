@@ -1,7 +1,7 @@
 """Busca nos fatos indexados do vault.
 
 É a única porta do agente para o que você escreveu sobre si. Não chama modelo e não escreve:
-lê a tabela `facts`, que `hermes index` reconstrói a partir do Obsidian.
+lê a tabela `facts`, que `quilha index` reconstrói a partir do Obsidian.
 """
 
 from __future__ import annotations

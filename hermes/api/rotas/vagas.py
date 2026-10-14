@@ -1,4 +1,4 @@
-"""Vagas e coletor — as mesmas funções de `hermes job`. Extrair e redigir o match gastam crédito."""
+"""Vagas e coletor — as mesmas funções de `quilha job`. Extrair e redigir o match gastam crédito."""
 
 from __future__ import annotations
 

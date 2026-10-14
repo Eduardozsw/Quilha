@@ -1,4 +1,4 @@
-"""Candidaturas — as mesmas funções de `hermes app`. Nada aqui chama o modelo."""
+"""Candidaturas — as mesmas funções de `quilha app`. Nada aqui chama o modelo."""
 
 from __future__ import annotations
 

@@ -282,7 +282,7 @@ def buscar(conn: sqlite3.Connection, job_id: int) -> dict:
         (job_id,),
     ).fetchone()
     if not linha:
-        raise VagaRecusada(f"vaga {job_id} não existe (veja `hermes job list`)")
+        raise VagaRecusada(f"vaga {job_id} não existe (veja `quilha job list`)")
     return dict(linha)
 
 
@@ -425,7 +425,7 @@ def _resultado(conn, job_id: int, extracao: dict, status, reextraida: bool) -> d
     if sem_competencia:
         status.add(
             f"{sem_competencia} requisito(s) sem competência cadastrada — mapeie com "
-            "`hermes job map` ou acrescente a competência em competencias.yaml"
+            "`quilha job map` ou acrescente a competência em competencias.yaml"
         )
     return {
         **_resumo(buscar(conn, job_id)),
@@ -498,12 +498,12 @@ def mapear(conn: sqlite3.Connection, requisito_id: int, slug: str | None) -> dic
     """Liga (ou desliga, com `slug=None`) um requisito a uma competência. Custo zero."""
     linha = conn.execute("SELECT job_id FROM job_requirements WHERE id = ?", (requisito_id,)).fetchone()
     if not linha:
-        raise VagaRecusada(f"requisito {requisito_id} não existe (veja `hermes job show`)")
+        raise VagaRecusada(f"requisito {requisito_id} não existe (veja `quilha job show`)")
     competency_id = None
     if slug:
         comp = conn.execute("SELECT id FROM competencies WHERE slug = ?", (slug,)).fetchone()
         if not comp:
-            raise VagaRecusada(f"competência `{slug}` não existe (veja `hermes comp list`)")
+            raise VagaRecusada(f"competência `{slug}` não existe (veja `quilha comp list`)")
         competency_id = comp["id"]
     with conn:
         # mapeamento feito por você não é palpite do modelo: a confiança deixa de fazer sentido

@@ -470,12 +470,12 @@ def gerar(
     if not selecao and vaga is not None:
         raise SemFatos(
             f"nenhum fato sustenta os requisitos da vaga {job_id}. Veja as lacunas com "
-            f"`hermes job match {job_id} --sem-texto` e mapeie requisitos com `hermes job map`."
+            f"`quilha job match {job_id} --sem-texto` e mapeie requisitos com `quilha job map`."
         )
     if not selecao:
         raise SemFatos(
             "nenhum fato sustenta currículo ainda. É preciso ligar evidência a uma competência "
-            "(`hermes comp evidence <slug> <ref>`) e declarar nível ≥ 2 (`hermes comp assess`)."
+            "(`quilha comp evidence <slug> <ref>`) e declarar nível ≥ 2 (`quilha comp assess`)."
         )
 
     prontas = [c for c in competencias.listar(conn) if c["pronta_para_cv"]]
@@ -564,7 +564,7 @@ def gerar(
     if job_id is not None:
         from hermes.domain import candidaturas
 
-        # gerar para a vaga conta como envio (fase 10); `hermes app cancelar` desfaz
+        # gerar para a vaga conta como envio (fase 10); `quilha app cancelar` desfaz
         # a candidatura aponta para a versão em português; gerar só o inglês não troca
         candidaturas.registrar_do_cv(conn, job_id, perfil.slug if perfil is not None else None, versao_id,
                                      trocar_versao="pt" in idiomas)

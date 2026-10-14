@@ -1,4 +1,4 @@
-"""Operação: o que `hermes stats`, `check`, `index` e `backup` mostram e fazem."""
+"""Operação: o que `quilha stats`, `check`, `index` e `backup` mostram e fazem."""
 
 from __future__ import annotations
 

@@ -51,7 +51,7 @@ def _assinatura(cfg: Config) -> tuple:
 
 
 def avisos_do_vault(conn: sqlite3.Connection, cfg: Config) -> list:
-    """O que `hermes check` acusa: notas, currículos e evidência órfã (esta vem do banco, sempre lida)."""
+    """O que `quilha check` acusa: notas, currículos e evidência órfã (esta vem do banco, sempre lida)."""
     chave = _assinatura(cfg)
     with _TRAVA_NOTAS:
         avisos = _CACHE_NOTAS.get(chave)

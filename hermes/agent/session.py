@@ -1,4 +1,4 @@
-"""Histórico da conversa no SQLite: é o que permite `hermes chat --continue`.
+"""Histórico da conversa no SQLite: é o que permite `quilha chat --continue`.
 
 As mensagens são gravadas no formato que o provedor espera, para o histórico voltar à API sem
 tradução. Invariante que o provedor cobra: toda `assistant` com `tool_calls` é seguida por uma

@@ -3,7 +3,7 @@
 A regra que segura tudo: **nível não sobe sem evidência**. Cada evidência aponta
 para um fato do vault pelo block id, então o currículo só pode afirmar o que a
 nota sustenta. Se o fato sumir do vault, a evidência vira órfã e aparece no
-`hermes check` — nunca é apagada em silêncio.
+`quilha check` — nunca é apagada em silêncio.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ NOMES_CATEGORIAS = {
     "soft": "Comportamental",
 }
 
-# O que cada nível exige de evidência (`hermes comp niveis` mostra a escala).
+# O que cada nível exige de evidência (`quilha comp niveis` mostra a escala).
 NIVEIS = {
     0: "nunca usei",
     1: "li, fiz tutorial, não entreguei nada",
@@ -95,7 +95,7 @@ def buscar(conn: sqlite3.Connection, slug: str) -> dict:
         "SELECT * FROM v_competency_current WHERE slug = ?", (slug,)
     ).fetchone()
     if not linha:
-        raise RegraViolada(f"competência `{slug}` não existe (veja `hermes comp list`)")
+        raise RegraViolada(f"competência `{slug}` não existe (veja `quilha comp list`)")
     return dict(linha)
 
 
@@ -262,14 +262,14 @@ def resolver_fato(conn: sqlite3.Connection, referencia: str) -> dict:
         ).fetchone()
         if not linha:
             raise RegraViolada(
-                f"fato `{nota}#{block_id}` não está no índice — confira a nota e rode `hermes index`"
+                f"fato `{nota}#{block_id}` não está no índice — confira a nota e rode `quilha index`"
             )
         return dict(linha)
 
     linhas = conn.execute("SELECT * FROM facts WHERE block_id = ?", (ref,)).fetchall()
     if not linhas:
         raise RegraViolada(
-            f"block id `^{ref}` não está no índice — confira a nota e rode `hermes index`"
+            f"block id `^{ref}` não está no índice — confira a nota e rode `quilha index`"
         )
     if len(linhas) > 1:
         notas = ", ".join(sorted(f"{l['nota']}#{ref}" for l in linhas))
@@ -490,7 +490,7 @@ def _exige_evidencia(slug: str, nivel: int, provas: list[dict]) -> None:
     if falta == "evidencia":
         raise RegraViolada(
             f"nível {nivel} em `{slug}` exige ao menos 1 evidência."
-            " Ligue um fato do vault: `hermes comp evidence " + slug + " <nota.md#block-id>`"
+            " Ligue um fato do vault: `quilha comp evidence " + slug + " <nota.md#block-id>`"
         )
     if falta == "duas":
         raise RegraViolada(
@@ -523,7 +523,7 @@ def exportar_markdown(conn: sqlite3.Connection) -> str:
         "# Competências",
         "",
         "> [!warning] Nota gerada pelo Hermes — não edite aqui.",
-        "> A fonte é o banco (`data/hermes.db`). Para mudar: `hermes comp evidence` e `hermes comp assess`.",
+        "> A fonte é o banco (`data/hermes.db`). Para mudar: `quilha comp evidence` e `quilha comp assess`.",
         "> Só entra no currículo o que tem nível ≥ 2 e evidência.",
         "",
         "| competência | nome | nível | evid. | situação |",

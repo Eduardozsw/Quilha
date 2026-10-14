@@ -47,7 +47,7 @@ from hermes.vault import indice, writer
 from hermes.vault.reader import read_notes
 
 app = typer.Typer(
-    help="Hermes — agente pessoal de carreira, vagas e estudos.",
+    help="Quilha — agente de carreira: vagas, currículo e estudos, a partir do seu vault.",
     no_args_is_help=True,
     add_completion=False,
 )
@@ -203,7 +203,7 @@ def stats(
         ).fetchall()
         for row in linhas:
             fatos.add_row(row["tipo"], str(row["n"]), str(row["f"]), row["q"] or "")
-        console.print(fatos if linhas else "Nenhum fato indexado. Rode `hermes index`.")
+        console.print(fatos if linhas else "Nenhum fato indexado. Rode `quilha index`.")
 
         resumo = competencias.cobertura(conn)
         if resumo["total"]:
@@ -331,7 +331,7 @@ def chat(
         # sem TTY o REPL leria EOF na primeira pergunta e sairia calado
         console.print(
             '[red]sem terminal interativo.[/red] Passe a pergunta como argumento: '
-            'hermes chat "quais competências já sustentam currículo?"'
+            'quilha chat "quais competências já sustentam currículo?"'
         )
         raise typer.Exit(2)
 
@@ -426,7 +426,7 @@ _OPC_LIMITE = typer.Option(None, "--limite",
                            help=f"Máximo de fatos (padrão: o do perfil, ou {curriculo.MAX_FATOS}).")
 _OPC_MODELO = typer.Option(None, "--model", help="Sobrepõe LLM_MODEL.")
 _OPC_JOB = typer.Option(None, "--job", help="Sob medida para uma vaga: só fatos das competências que ela pede.")
-_OPC_PERFIL = typer.Option(None, "--perfil", "-p", help="Recorte de `curriculos.yaml` (veja `hermes cv perfis`).")
+_OPC_PERFIL = typer.Option(None, "--perfil", "-p", help="Recorte de `curriculos.yaml` (veja `quilha cv perfis`).")
 _OPC_FORCAR = typer.Option(False, "--forcar",
                            help="Redige de novo mesmo se a seleção não mudou (gasta crédito).")
 
@@ -590,7 +590,7 @@ def _cobertura_resumida(conn) -> None:
     resumo = competencias.cobertura(conn)
     console.print(
         f"{resumo['prontas']} de {resumo['total']} competências sustentam currículo. "
-        "Veja `hermes comp coverage`."
+        "Veja `quilha comp coverage`."
     )
 
 
@@ -638,7 +638,7 @@ def job_add(
     if not url and not (texto or "").strip():
         console.print(
             "[red]sem texto da vaga.[/red] Passe um arquivo, `--url`, ou cole pela entrada padrão:"
-            " wl-paste | hermes job add -"
+            " wl-paste | quilha job add -"
         )
         raise typer.Exit(2)
 
@@ -665,7 +665,7 @@ def job_add(
         if resultado["duplicada"]:
             console.print(
                 f"[yellow]já gravada[/yellow], nada foi gasto: {cabecalho}"
-                f" (para extrair de novo: hermes job extrair {resultado['job_id']})"
+                f" (para extrair de novo: quilha job extrair {resultado['job_id']})"
             )
         else:
             console.print(f"[green]gravada[/green]: {cabecalho}")
@@ -727,7 +727,7 @@ def job_list(
     try:
         linhas = vaga.listar(conn, status_vaga)
         if not linhas:
-            console.print("Nenhuma vaga. Grave uma com `hermes job add`.")
+            console.print("Nenhuma vaga. Grave uma com `quilha job add`.")
             return
         tabela = Table(show_header=True, header_style="bold")
         for col, just in (("id", "right"), ("empresa", "left"), ("título", "left"),
@@ -768,7 +768,7 @@ def job_show(
 
 @job_app.command("map")
 def job_map(
-    requisito_id: int = typer.Argument(..., help="Id do requisito (veja `hermes job show`)."),
+    requisito_id: int = typer.Argument(..., help="Id do requisito (veja `quilha job show`)."),
     slug: Optional[str] = typer.Argument(None, help="Competência. Sem ela, desfaz o mapeamento."),
     db: Optional[Path] = typer.Option(None, help="Caminho do banco (default: HERMES_DB)."),
 ) -> None:
@@ -839,10 +839,10 @@ def job_match(
                 linha = f"- [{f['requisito_id']}] {f['texto']} ({f['motivo']})"
                 if f.get("ligadas"):
                     refs = ", ".join(f"^{b}" for b in f["ligadas"])
-                    linha += f"\n    [cyan]já ligado:[/cyan] {refs} — declare com `hermes comp assess`"
+                    linha += f"\n    [cyan]já ligado:[/cyan] {refs} — declare com `quilha comp assess`"
                 elif f.get("candidatos"):
                     refs = ", ".join(f"^{c['block_id']}" for c in f["candidatos"])
-                    linha += f"\n    [cyan]no vault:[/cyan] {refs} — ligue com `hermes comp evidence`"
+                    linha += f"\n    [cyan]no vault:[/cyan] {refs} — ligue com `quilha comp evidence`"
                 if f.get("comentario"):
                     linha += f"\n    {f['comentario']}"
                 console.print(linha)
@@ -912,7 +912,7 @@ def study_week(
                               f"{i['descricao']}")
         if r["sinais_pendentes"]:
             console.print(f"[yellow]{r['sinais_pendentes']} commit(s) sem resposta[/yellow]:"
-                          " `hermes study git` para ver")
+                          " `quilha study git` para ver")
     finally:
         conn.close()
 
@@ -942,8 +942,8 @@ def study_git(
             for s_ in sinais:
                 console.print(f"  [{s_['id']}] {s_['data']} {s_['sha']} {s_['resumo']}")
         if r["pendentes"]:
-            console.print("\nFoi estudo? `hermes study confirm <ids> <minutos> \"o que fez\"`."
-                          " Não foi? `hermes study ignore <ids>`.")
+            console.print("\nFoi estudo? `quilha study confirm <ids> <minutos> \"o que fez\"`."
+                          " Não foi? `quilha study ignore <ids>`.")
         for aviso in ex.status.warnings:
             console.print(f"[yellow]aviso:[/yellow] {aviso}")
         ex.delivered = True
@@ -1094,7 +1094,7 @@ def job_collect(
                     ex.status.add(f"vaga {job_id}: {e}")
             console.print(_rodape(ex.status, 0).replace("sessão 0 · ", ""))
         elif r["ids_novos"]:
-            console.print("[dim]requisitos não extraídos: `hermes job extrair <id>` ou `--extrair N`[/dim]")
+            console.print("[dim]requisitos não extraídos: `quilha job extrair <id>` ou `--extrair N`[/dim]")
 
         for aviso in ex.status.warnings:
             console.print(f"[yellow]aviso:[/yellow] {aviso}")
@@ -1112,7 +1112,7 @@ def job_fila(
     try:
         linhas = coletor.fila(conn)
         if not linhas:
-            console.print("Fila vazia. Rode `hermes job collect`.")
+            console.print("Fila vazia. Rode `quilha job collect`.")
             return
         tabela = Table(show_header=True, header_style="bold")
         for col in ("fonte", "board", "estado", "falhas", "próxima", "última ok", "erro"):
@@ -1178,7 +1178,7 @@ def mcp_call(
         if tool not in remotas:
             for aviso in ex.status.warnings:
                 console.print(f"[yellow]aviso:[/yellow] {aviso}")
-            _recusa(f"`{tool}` não está liberada (veja `hermes mcp list`)")
+            _recusa(f"`{tool}` não está liberada (veja `quilha mcp list`)")
         try:
             resultado = remotas[tool].funcao(None, **args)
         except mcp_client.FalhaMCP as exc:
@@ -1247,7 +1247,7 @@ def comp_list(
     try:
         linhas = competencias.listar(conn, categoria=categoria, so_lacunas=lacunas)
         if not linhas:
-            console.print("Nenhuma competência. Rode `hermes comp seed`.")
+            console.print("Nenhuma competência. Rode `quilha comp seed`.")
             return
         titulo = "Lacunas" if lacunas else "Competências"
         console.print(_tabela_competencias(linhas, titulo))
@@ -1292,7 +1292,7 @@ def comp_show(
             console.print(f"Justificativa: {comp['justificativa']}")
         provas = competencias.evidencias(conn, slug)
         if not provas:
-            console.print("[yellow]Sem evidência.[/yellow] Ligue um fato: `hermes comp evidence"
+            console.print("[yellow]Sem evidência.[/yellow] Ligue um fato: `quilha comp evidence"
                           f" {slug} <nota.md#block-id>`")
             return
         tabela = Table(show_header=True, header_style="bold")
@@ -1339,7 +1339,7 @@ def comp_evidence(
             console.print(f"[green]removido[/green] {slug} → {r['nota']}#{r['block_id']}")
             if r["nivel_sem_base"]:
                 console.print(f"[yellow]{r['nivel_sem_base']}.[/yellow] Reavalie: "
-                              f"`hermes comp assess {slug} <nivel> -j '...'`")
+                              f"`quilha comp assess {slug} <nivel> -j '...'`")
             _atualiza_nota_gerada(cfg, execucao.conn)
         return
     with executando(cfg, "comp evidence") as execucao:
@@ -1356,7 +1356,7 @@ def comp_evidence(
 @comp_app.command("assess")
 def comp_assess(
     slug: str = typer.Argument(..., help="Slug da competência."),
-    nivel: int = typer.Argument(..., help="0 a 4. Veja `hermes comp niveis`."),
+    nivel: int = typer.Argument(..., help="0 a 4. Veja `quilha comp niveis`."),
     justificativa: str = typer.Option(
         ..., "--justificativa", "-j", help="O que você diria numa entrevista."
     ),
@@ -1494,7 +1494,7 @@ def comp_coverage(
     try:
         resumo = competencias.cobertura(conn)
         if not resumo["total"]:
-            console.print("Nenhuma competência. Rode `hermes comp seed`.")
+            console.print("Nenhuma competência. Rode `quilha comp seed`.")
             return
         console.print(
             f"[bold]{resumo['prontas']} de {resumo['total']}[/bold] competências sustentam currículo"
@@ -1570,7 +1570,7 @@ def _sync_e_mostra(ex, caixa, classificador, dias: int, maximo: int, rotular: bo
     for categoria, n in sorted(r["por_categoria"].items()):
         console.print(f"  {categoria:<22} {n}")
     if r["pendentes"]:
-        console.print(f"[yellow]{r['pendentes']} e-mail(s) pendente(s):[/yellow] `hermes email pendentes`")
+        console.print(f"[yellow]{r['pendentes']} e-mail(s) pendente(s):[/yellow] `quilha email pendentes`")
     for aviso in triagem_email.resumir_avisos(ex.status.warnings):
         console.print(f"[yellow]aviso:[/yellow] {aviso}", soft_wrap=True)
     if ex.status.tool_errors:
@@ -1624,7 +1624,7 @@ def email_pendentes() -> None:
             tabela.add_row(str(l["id"]), l["recebido_em"][:10], l["categoria"], l["empresa_extraida"] or "—",
                            l["de"][:30], l["assunto"][:60])
         console.print(tabela)
-        console.print("[dim]`hermes email corrigir <id> <categoria>` · `hermes email ligar <id> <candidatura>`[/dim]")
+        console.print("[dim]`quilha email corrigir <id> <categoria>` · `quilha email ligar <id> <candidatura>`[/dim]")
 
 
 @email_app.command("ligar")
@@ -1653,7 +1653,7 @@ def email_avaliar() -> None:
     with _banco(cfg) as conn:
         r = triagem_email.avaliar(conn)
         if not r["rotuladas"]:
-            console.print("Nenhum e-mail corrigido ainda: use `hermes email corrigir`.")
+            console.print("Nenhum e-mail corrigido ainda: use `quilha email corrigir`.")
             return
         console.print(f"Rotulados: {r['rotuladas']} · para revisão: {r['revisao']}")
         if r["decididas"]:
@@ -1741,7 +1741,7 @@ def app_notas() -> None:
             console.print(tabela)
         if r["pingadas"]:
             console.print(f"[yellow]{r['pingadas']} candidatura(s) sem perfil fora da nota:[/yellow] "
-                          "`hermes app list --pingadas`")
+                          "`quilha app list --pingadas`")
 
 
 if __name__ == "__main__":

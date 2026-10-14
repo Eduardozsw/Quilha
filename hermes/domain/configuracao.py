@@ -102,7 +102,7 @@ def _ultima_copia(pasta: Path) -> str | None:
 
 def _versao() -> str:
     try:
-        return importlib.metadata.version("hermes")
+        return importlib.metadata.version("quilha")
     except importlib.metadata.PackageNotFoundError:
         return "dev"
 

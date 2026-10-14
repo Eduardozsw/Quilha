@@ -1,4 +1,4 @@
-"""Estudos — as mesmas funções de `hermes study`. Você declara; commit só pergunta."""
+"""Estudos — as mesmas funções de `quilha study`. Você declara; commit só pergunta."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""E-mails de processo — as mesmas funções de `hermes email`. Só o sync chama o Jev (e custa crédito)."""
+"""E-mails de processo — as mesmas funções de `quilha email`. Só o sync chama o Jev (e custa crédito)."""
 
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ def listar(visao: str = "pendentes", conn: sqlite3.Connection = Depends(conexao)
 @router.post("/sync")
 def sincronizar(corpo: PedidoSync, conn: sqlite3.Connection = Depends(conexao),
                 cfg: Config = Depends(config)) -> dict:
-    """Lê o Gmail e classifica só os e-mails novos (LLM do usuário ou Jev), como `hermes email sync`."""
+    """Lê o Gmail e classifica só os e-mails novos (LLM do usuário ou Jev), como `quilha email sync`."""
     from hermes.integracoes import caixa as caixas
 
     with triagem_email.classificador_configurado() as (classificador, modelo):

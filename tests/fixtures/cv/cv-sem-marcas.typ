@@ -1,7 +1,7 @@
 // Currículo a partir da estrutura do Hermes (`cv-<idioma>.json`). Nada aqui é editado à mão:
 // o conteúdo vem do vault; este arquivo só decide a aparência.
 //
-// Entrada: `sys.inputs.dados`, o JSON inteiro como texto (`hermes cv pdf` passa).
+// Entrada: `sys.inputs.dados`, o JSON inteiro como texto (`quilha cv pdf` passa).
 // Saída auxiliar para a checagem de páginas: metadata <paginas> e <medida> (altura de cada entrada).
 
 #let dados = json(bytes(sys.inputs.dados))

@@ -1,4 +1,4 @@
-"""Competências: taxonomia, evidência e nível — as mesmas regras de `hermes comp`."""
+"""Competências: taxonomia, evidência e nível — as mesmas regras de `quilha comp`."""
 
 from __future__ import annotations
 

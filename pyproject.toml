@@ -1,7 +1,7 @@
 [project]
-name = "hermes"
+name = "Quilha"  # como aparece no PyPI; instalação e comando seguem em minúsculo (o PyPI normaliza)
 version = "0.1.0"
-description = "Agente pessoal de carreira, vagas e estudos"
+description = "Agente de carreira local: avalia vagas, gera currículo só com o que você comprova e acompanha candidaturas"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -24,7 +24,8 @@ dependencies = [
 ]
 
 [project.scripts]
-hermes = "hermes.cli:app"
+quilha = "hermes.cli:app"
+hermes = "hermes.cli:app"  # apelido do nome antigo
 
 [dependency-groups]
 dev = [

@@ -1,6 +1,6 @@
 """Coletor de vagas: ATS públicos, com fila, retries, backoff, dedup e robots.txt.
 
-O fluxo de uma execução de `hermes job collect`:
+O fluxo de uma execução de `quilha job collect`:
 
 1. **Enfileira**: cada fonte de `fontes.yaml` ganha (ou mantém) uma linha em `fila_coleta`.
 2. **Seleciona**: só a fonte cujo `proximo_em` já passou. Fonte que falhou espera um backoff que
@@ -10,7 +10,7 @@ O fluxo de uma execução de `hermes job collect`:
 4. **Registra**: uma linha em `coletas` por fonte, com vistas, filtradas, novas e duplicadas.
 
 Vaga coletada entra **sem** requisitos: a extração custa uma chamada ao modelo e fica para quando
-você pedir (`hermes job extrair <id>`, ou `--extrair N` no próprio collect).
+você pedir (`quilha job extrair <id>`, ou `--extrair N` no próprio collect).
 
 Fontes: Greenhouse e Lever têm API pública de vagas, feita para ser consumida. A Gupy não tem API
 pública, mas a página de carreiras (`<empresa>.gupy.io`) é Next.js renderizado no servidor: a lista

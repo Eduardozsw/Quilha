@@ -3,7 +3,7 @@
 Todo o resto do Hermes fala com o modelo por aqui: é o único lugar que conhece nome de provedor,
 retries, timeout e preço. Trocar de provedor é trocar `LLM_MODEL` no `.env`.
 
-O `import litellm` é preguiçoso de propósito: ele custa alguns segundos, e `hermes check`,
+O `import litellm` é preguiçoso de propósito: ele custa alguns segundos, e `quilha check`,
 `index`, `comp` e `stats` não chamam modelo nenhum. Quem não usa LLM não paga o import.
 """
 

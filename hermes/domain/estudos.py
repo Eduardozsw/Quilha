@@ -43,7 +43,7 @@ def _competencia_id(conn: sqlite3.Connection, slug: str | None) -> int | None:
         return None
     linha = conn.execute("SELECT id FROM competencies WHERE slug = ?", (slug,)).fetchone()
     if not linha:
-        raise EstudoRecusado(f"competência `{slug}` não existe (veja `hermes comp list`)")
+        raise EstudoRecusado(f"competência `{slug}` não existe (veja `quilha comp list`)")
     return linha["id"]
 
 
@@ -282,7 +282,7 @@ def plan_week(
     lacunas = lacunas_de_vagas(conn)
     if not lacunas:
         raise EstudoRecusado(
-            "nenhuma lacuna de vaga para planejar: grave uma vaga (`hermes job add`) com "
+            "nenhuma lacuna de vaga para planejar: grave uma vaga (`quilha job add`) com "
             "requisitos mapeados a competências abaixo do nível 2"
         )
     anterior = resumo_semana(conn, semana_iso(date.fromisoformat(inicio) - timedelta(days=7)))
@@ -394,13 +394,13 @@ def _item_declarar(g: dict, ids: dict) -> dict:
         refs = ", ".join(f"^{e['block_id']}" for e in g["ligadas"])
         descricao = (
             f"Declarar o nível de `{slug}`: a evidência já está ligada ({refs}). "
-            f"`hermes comp assess {slug} <nível> -j \"...\"`"
+            f"`quilha comp assess {slug} <nível> -j \"...\"`"
         )
     else:
         refs = ", ".join(f"^{c['block_id']}" for c in g["candidatos"])
         descricao = (
             f"Conferir {refs} e, se sustentarem, ligar a evidência "
-            f"(`hermes comp evidence {slug} <ref>`) e declarar o nível (`hermes comp assess`)"
+            f"(`quilha comp evidence {slug} <ref>`) e declarar o nível (`quilha comp assess`)"
         )
     return {
         "competencia": slug,

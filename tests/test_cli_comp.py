@@ -72,7 +72,7 @@ def test_evidencia_com_block_id_inexistente(projeto):
         app, ["comp", "evidence", "python", "nao-existe", "--db", str(projeto)]
     )
     assert resultado.exit_code == 1
-    assert "hermes index" in resultado.stdout
+    assert "quilha index" in resultado.stdout
 
 
 def test_show_lista_evidencias(projeto):

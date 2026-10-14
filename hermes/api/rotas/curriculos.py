@@ -1,4 +1,4 @@
-"""Currículos: perfis, galeria de versões e geração — as mesmas funções de `hermes cv`."""
+"""Currículos: perfis, galeria de versões e geração — as mesmas funções de `quilha cv`."""
 
 from __future__ import annotations
 

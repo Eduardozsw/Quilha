@@ -300,7 +300,7 @@ def preencher_corpos(conn: sqlite3.Connection, caixa, status) -> dict:
 
 
 def avaliar(conn: sqlite3.Connection) -> dict:
-    """Acurácia da triagem contra as correções manuais (`hermes email corrigir`)."""
+    """Acurácia da triagem contra as correções manuais (`quilha email corrigir`)."""
     linhas = [dict(r) for r in conn.execute(
         "SELECT id, assunto, final, rotulo_manual, latencia_ms FROM emails"
         " WHERE rotulo_manual IS NOT NULL ORDER BY recebido_em")]

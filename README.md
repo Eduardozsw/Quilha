@@ -146,19 +146,19 @@ inicio: 2026-03
 - Schema PostgreSQL escrito à mão, com constraints CHECK #sql ^schema
 ```
 
-Regras que o `hermes check` cobra:
+Regras que o `quilha check` cobra:
 - **Todo fato termina num block id** (`^algum-id`), único na nota. É ele que o currículo cita.
 - **Número precisa de fonte:** N, data ou período no próprio fato. Sem isso, aviso.
 - Experiência aceita também `cargo`, `fim` (ou `atual`) e `local`, que vão para o cabeçalho da entrada.
 - `Perfil.md` na **raiz** do vault (fora de `Carreira/`) guarda nome, contato e formação do cabeçalho.
-  `hermes cv draft` mostra o template se ele não existir.
+  `quilha cv draft` mostra o template se ele não existir.
 - `denylist.yaml` (copie de `denylist.example.yaml`) lista termos que nunca podem ir para uma API de LLM —
   nome de cliente, sistema interno. Se um aparecer numa nota, o comando falha.
 
 ## Para quem desenvolve
 
-O pacote Python e a CLI ainda se chamam `hermes`: o app desktop é uma casca sobre a mesma API
-local, e tudo que ele faz também existe na linha de comando.
+A CLI se chama `quilha` (o pacote Python, por dentro, ainda é `hermes/`): o app desktop é uma casca sobre a
+mesma API local, e tudo que ele faz também existe na linha de comando.
 
 ### Como funciona
 
@@ -170,7 +170,7 @@ O **SQLite é a verdade operacional** (vagas, competências, avaliações, sess�
 `facts` é a única exceção: é índice do vault e pode ser apagada e reconstruída a qualquer momento.
 
 ```
-Obsidian/Carreira/**.md  →  hermes index  →  facts (descartável)
+Obsidian/Carreira/**.md  →  quilha index  →  facts (descartável)
                                               ↕ evidence (não descartável)
                                             competencies · jobs · study_sessions · runs
 ```
@@ -183,15 +183,16 @@ Para rodar a partir do código (CLI completa, sem o instalador):
 git clone https://github.com/Eduardozsw/quilha.git && cd quilha
 uv sync
 cp .env.example .env          # ajuste VAULT_PATH se o vault não estiver em ~/Obsidian
-uv run hermes check           # valida o vault
-uv run hermes index           # constrói o índice de fatos
-uv run hermes comp seed       # carrega a taxonomia de competencias.yaml
-uv run hermes stats           # o que há no banco
+uv run quilha check           # valida o vault
+uv run quilha index           # constrói o índice de fatos
+uv run quilha comp seed       # carrega a taxonomia de competencias.yaml
+uv run quilha stats           # o que há no banco
 ```
 
 Requer [uv](https://docs.astral.sh/uv/) e Python 3.11+. Todos esses comandos rodam offline e sem custo.
+`hermes` continua funcionando como apelido de `quilha`.
 
-Para chamar `hermes` de qualquer pasta, sem `uv run`:
+Para chamar `quilha` de qualquer pasta, sem `uv run`:
 
 ```bash
 uv tool install --editable .                                  # usa a configuração e o banco deste checkout
@@ -206,43 +207,43 @@ veem os mesmos dados (`hermes/caminhos.py`). O app desktop e o instalador: `desk
 
 | Comando | O que faz | Custo |
 |---|---|---|
-| `hermes check [--strict]` | Valida frontmatter, block ids, número sem fonte, denylist e evidência órfã | zero |
-| `hermes index` | Reconstrói `facts` a partir do vault, numa transação | zero |
-| `hermes stats` | Fatos indexados, competências e últimas execuções | zero |
-| `hermes comp seed` | Carrega a taxonomia de `competencias.yaml` (idempotente por slug) | zero |
-| `hermes comp list [--lacunas]` | Nível vigente e evidências por competência | zero |
-| `hermes comp evidence <slug> <ref> [--remover]` | Liga (ou desliga) uma competência a um fato do vault | zero |
-| `hermes comp assess <slug> <nível> -j "..."` | Declara seu nível — recusado sem evidência que sustente | zero |
-| `hermes comp show <slug>` | Nível, justificativa e evidências | zero |
-| `hermes comp coverage` | O que sustenta currículo e o que é lacuna | zero |
-| `hermes comp niveis` | A escala 0–4 e o que cada nível exige | zero |
-| `hermes comp export` | Escreve `Competencias.md` no vault (espelho só de leitura, com links para os fatos) | zero |
-| `hermes backup [--destino] [--manter 10]` | Cópia do banco em `data/backups/` (ou `HERMES_BACKUP_DIR`) | zero |
-| `hermes chat [pergunta]` | Conversa com o agente. Sem argumento, abre o REPL | **paga** |
-| `hermes cv draft [-i pt] [-i en] [--job <id>] [--perfil <slug>] [--forcar]` | Gera o currículo a partir dos fatos que sustentam nível ≥ 2; seleção igual a uma já redigida é reaproveitada sem custo | **paga** |
-| `hermes cv pdf [-i pt] [--perfil <slug>] [--job <id>]` | O mesmo que `cv draft` e mais o PDF (Typst). Passou do limite de páginas do perfil: sai com 1 e diz o que ocupa mais | **paga** como `cv draft`; zero se reaproveitar |
-| `hermes cv perfis` | Perfis de `curriculos.yaml` (copie de `curriculos.example.yaml`) e quantas versões cada um já tem | zero |
-| `hermes serve [--port 8765]` | API local do app desktop, só em 127.0.0.1, exige o token de `HERMES_API_TOKEN` | zero |
-| `hermes job add [arquivo \| -] [--url URL]` | Grava a vaga e extrai os requisitos. Vaga repetida não chama o modelo | **paga** (1 chamada) |
-| `hermes job extrair <id>` | Extrai (ou refaz) os requisitos de uma vaga gravada, a partir do texto guardado | **paga** (1 chamada) |
-| `hermes job list` / `job show <id>` | Vagas com o último score / requisitos e mapeamento | zero |
-| `hermes job map <requisito> [slug]` | Corrige o mapeamento de um requisito (sem slug, desfaz) | zero |
-| `hermes job match <id> [--sem-texto]` | Score v1, lacunas e riscos de entrevista | **paga** (1 chamada); zero com `--sem-texto` |
-| `hermes study log <min> "o que fez" [-c slug]` | Registra uma sessão de estudo que você fez | zero |
-| `hermes study week [--semana 2026-W39]` | Minutos da semana por competência, contra o plano | zero |
-| `hermes study git [--dias 1]` | Commits recentes dos seus repositórios como **sinal** | zero |
-| `hermes study confirm <ids> <min> "o que fez"` / `study ignore <ids>` | Commits viram uma sessão com o que você declarou / saem da lista | zero |
-| `hermes job collect [--forcar] [--extrair N]` | Coleta vagas das fontes de `fontes.yaml` (Greenhouse, Lever, Gupy) | zero; `--extrair` paga 1 chamada por vaga |
-| `hermes job fila` | Estado da fila do coletor: falhas seguidas e próxima tentativa | zero |
-| `hermes email sync [--dias 30] [--max 200] [--rotular]` | Lê o Gmail, classifica os e-mails novos (LLM do usuário ou Jev) e liga às candidaturas | **paga** (1 chamada por e-mail novo) |
-| `hermes email testar` | Conecta na caixa de `EMAIL_ORIGEM` (Gmail ou IMAP) e conta os e-mails da semana | zero |
-| `hermes email pendentes` / `email ligar <e> <c>` / `email corrigir <e> <cat>` | Revisão do que o Quilha não ligou sozinho | zero |
-| `hermes email avaliar` | Acurácia da triagem contra as suas correções | zero |
-| `hermes app list [--status] [--pingadas]` / `app add` / `app perfil <id> <slug>` / `app cancelar <id>` | Candidaturas: o que foi enviado e com qual perfil | zero |
-| `hermes app notas` | Nota 0–5 de cada perfil pela taxa de avanço | zero |
-| `hermes mcp list` | Servidores de `mcp.yaml`, as tools de cada um e o que está liberado | zero |
-| `hermes mcp call <tool> '{json}'` | Chama uma tool MCP liberada, sem LLM | zero |
-| `hermes study plan -m <minutos>` | Plano da próxima semana a partir das lacunas das vagas; acrescenta em `Diario/` se você confirmar | **paga** (1 chamada) |
+| `quilha check [--strict]` | Valida frontmatter, block ids, número sem fonte, denylist e evidência órfã | zero |
+| `quilha index` | Reconstrói `facts` a partir do vault, numa transação | zero |
+| `quilha stats` | Fatos indexados, competências e últimas execuções | zero |
+| `quilha comp seed` | Carrega a taxonomia de `competencias.yaml` (idempotente por slug) | zero |
+| `quilha comp list [--lacunas]` | Nível vigente e evidências por competência | zero |
+| `quilha comp evidence <slug> <ref> [--remover]` | Liga (ou desliga) uma competência a um fato do vault | zero |
+| `quilha comp assess <slug> <nível> -j "..."` | Declara seu nível — recusado sem evidência que sustente | zero |
+| `quilha comp show <slug>` | Nível, justificativa e evidências | zero |
+| `quilha comp coverage` | O que sustenta currículo e o que é lacuna | zero |
+| `quilha comp niveis` | A escala 0–4 e o que cada nível exige | zero |
+| `quilha comp export` | Escreve `Competencias.md` no vault (espelho só de leitura, com links para os fatos) | zero |
+| `quilha backup [--destino] [--manter 10]` | Cópia do banco em `data/backups/` (ou `HERMES_BACKUP_DIR`) | zero |
+| `quilha chat [pergunta]` | Conversa com o agente. Sem argumento, abre o REPL | **paga** |
+| `quilha cv draft [-i pt] [-i en] [--job <id>] [--perfil <slug>] [--forcar]` | Gera o currículo a partir dos fatos que sustentam nível ≥ 2; seleção igual a uma já redigida é reaproveitada sem custo | **paga** |
+| `quilha cv pdf [-i pt] [--perfil <slug>] [--job <id>]` | O mesmo que `cv draft` e mais o PDF (Typst). Passou do limite de páginas do perfil: sai com 1 e diz o que ocupa mais | **paga** como `cv draft`; zero se reaproveitar |
+| `quilha cv perfis` | Perfis de `curriculos.yaml` (copie de `curriculos.example.yaml`) e quantas versões cada um já tem | zero |
+| `quilha serve [--port 8765]` | API local do app desktop, só em 127.0.0.1, exige o token de `HERMES_API_TOKEN` | zero |
+| `quilha job add [arquivo \| -] [--url URL]` | Grava a vaga e extrai os requisitos. Vaga repetida não chama o modelo | **paga** (1 chamada) |
+| `quilha job extrair <id>` | Extrai (ou refaz) os requisitos de uma vaga gravada, a partir do texto guardado | **paga** (1 chamada) |
+| `quilha job list` / `job show <id>` | Vagas com o último score / requisitos e mapeamento | zero |
+| `quilha job map <requisito> [slug]` | Corrige o mapeamento de um requisito (sem slug, desfaz) | zero |
+| `quilha job match <id> [--sem-texto]` | Score v1, lacunas e riscos de entrevista | **paga** (1 chamada); zero com `--sem-texto` |
+| `quilha study log <min> "o que fez" [-c slug]` | Registra uma sessão de estudo que você fez | zero |
+| `quilha study week [--semana 2026-W39]` | Minutos da semana por competência, contra o plano | zero |
+| `quilha study git [--dias 1]` | Commits recentes dos seus repositórios como **sinal** | zero |
+| `quilha study confirm <ids> <min> "o que fez"` / `study ignore <ids>` | Commits viram uma sessão com o que você declarou / saem da lista | zero |
+| `quilha job collect [--forcar] [--extrair N]` | Coleta vagas das fontes de `fontes.yaml` (Greenhouse, Lever, Gupy) | zero; `--extrair` paga 1 chamada por vaga |
+| `quilha job fila` | Estado da fila do coletor: falhas seguidas e próxima tentativa | zero |
+| `quilha email sync [--dias 30] [--max 200] [--rotular]` | Lê o Gmail, classifica os e-mails novos (LLM do usuário ou Jev) e liga às candidaturas | **paga** (1 chamada por e-mail novo) |
+| `quilha email testar` | Conecta na caixa de `EMAIL_ORIGEM` (Gmail ou IMAP) e conta os e-mails da semana | zero |
+| `quilha email pendentes` / `email ligar <e> <c>` / `email corrigir <e> <cat>` | Revisão do que o Quilha não ligou sozinho | zero |
+| `quilha email avaliar` | Acurácia da triagem contra as suas correções | zero |
+| `quilha app list [--status] [--pingadas]` / `app add` / `app perfil <id> <slug>` / `app cancelar <id>` | Candidaturas: o que foi enviado e com qual perfil | zero |
+| `quilha app notas` | Nota 0–5 de cada perfil pela taxa de avanço | zero |
+| `quilha mcp list` | Servidores de `mcp.yaml`, as tools de cada um e o que está liberado | zero |
+| `quilha mcp call <tool> '{json}'` | Chama uma tool MCP liberada, sem LLM | zero |
+| `quilha study plan -m <minutos>` | Plano da próxima semana a partir das lacunas das vagas; acrescenta em `Diario/` se você confirmar | **paga** (1 chamada) |
 
 Sem `pergunta`, abre a conversa interativa (saia com Ctrl-D ou
 `sair`); `--continue` retoma a última sessão; `--max-cost` sobrepõe o teto de `HERMES_MAX_COST_USD`, que
@@ -263,7 +264,7 @@ modelo: mudar um cabeçalho no vault e gerar de novo remonta o currículo sem ch
 `cv pdf` passa o JSON pelo template `hermes/templates/cv.typ` (fonte XCharter, dentro do projeto; nada
 depende de fonte do sistema) e confere as páginas. Passou de `paginas` do perfil (padrão 1): o PDF fica
 gravado para você ver, o comando sai com 1 e lista as entradas da maior para a menor, em linhas. O
-código não corta nada sozinho. `hermes check` avisa item de Habilidades que nenhuma nota sustenta
+código não corta nada sozinho. `quilha check` avisa item de Habilidades que nenhuma nota sustenta
 (stack ou tag de fato): declaração não é fato.
 
 #### Estudos: você declara, o commit só pergunta
@@ -340,7 +341,7 @@ houver, `url` e `resumo`. Com o SDK `mcp`, um servidor assim é um `MCPServer` c
 
 #### Vagas: o modelo lê, o código dá a nota
 
-`job add` aceita arquivo, entrada padrão (`wl-paste | hermes job add -`) ou `--url`. Antes de chamar o
+`job add` aceita arquivo, entrada padrão (`wl-paste | quilha job add -`) ou `--url`. Antes de chamar o
 modelo, o texto passa pelo **dedup** (hash do texto normalizado, ou a mesma URL), que devolve a vaga já
 gravada sem gastar nada, e pela **denylist**, que recusa a vaga sem mandá-la para a API. URL é buscada com
 timeout de 15 s e até 2 retries em erro de rede ou 5xx; página com menos de 500 caracteres de texto (vaga
@@ -374,7 +375,7 @@ fatos das competências que a vaga pede, ordenados por peso do requisito × for�
 sobre as mesmas funções de `hermes/domain/` que a CLI chama: nenhuma regra mora na API. Recusa do domínio
 volta como 422 com a mensagem original, e toda escrita vira uma linha em `runs`, como na CLI.
 
-- **Só local e com token.** O app sobe `hermes serve` em 127.0.0.1 numa porta livre, com um token novo a cada
+- **Só local e com token.** O app sobe `quilha serve` em 127.0.0.1 numa porta livre, com um token novo a cada
   execução, passado pelo ambiente. Sem o token, 401 — uma página qualquer aberta no navegador não consegue
   gravar no banco nem no vault.
 - **Chat em SSE, gravação por clique.** O turno roda o mesmo loop numa thread e transmite os eventos. Tool que
@@ -398,25 +399,25 @@ Nível não sobe sem evidência, e evidência é sempre um fato do vault citado 
 | 3 | entreguei e mantive; sei explicar decisões | 2 evidências, uma com número medido e fonte |
 | 4 | rodou em operação, com gente dependendo | uma evidência com métrica **e** período |
 
-`hermes comp assess python 3 -j "..."` é recusado se os fatos ligados não sustentarem o nível — e a recusa diz
+`quilha comp assess python 3 -j "..."` é recusado se os fatos ligados não sustentarem o nível — e a recusa diz
 exatamente o que falta. Remover uma evidência que sustenta o nível vigente também é recusado: reavalie antes.
 
 ```bash
-uv run hermes comp seed
-uv run hermes comp evidence sql "Carreira/Projetos/Mirante.md#sql" --forca 3
-uv run hermes comp assess sql 2 -j "modelei o schema e escrevi as consultas à mão"
-uv run hermes comp coverage
+uv run quilha comp seed
+uv run quilha comp evidence sql "Carreira/Projetos/Mirante.md#sql" --forca 3
+uv run quilha comp assess sql 2 -j "modelei o schema e escrevi as consultas à mão"
+uv run quilha comp coverage
 ```
 
 A referência do fato pode ser só o block id (`sql`) quando ele for único no índice.
 
-Evidência e nível moram no banco, não no vault. Para ler no Obsidian, `hermes comp export` gera
+Evidência e nível moram no banco, não no vault. Para ler no Obsidian, `quilha comp export` gera
 `Competencias.md` na raiz do vault: tabela de níveis e, por competência, a justificativa e links
 `[[nota#^block-id]]` para os fatos. É espelho: editar a nota não muda nada, e ela só é sobrescrita se
 carrega a marca `gerado_por: hermes` (nota sua com o mesmo nome nunca é tocada). Depois da primeira
 exportação, `comp evidence` e `comp assess` a mantêm em dia sozinhos.
 
-Como o índice de fatos se reconstrói do vault mas evidência e nível não, `hermes backup` guarda cópias do
+Como o índice de fatos se reconstrói do vault mas evidência e nível não, `quilha backup` guarda cópias do
 banco (API de backup do SQLite, segura com o banco aberto) e apaga as mais antigas além de `--manter`.
 
 #### E-mail e candidaturas
@@ -424,8 +425,8 @@ banco (API de backup do SQLite, segura com o banco aberto) e apaga as mais antig
 Fecha o ciclo vaga → currículo → envio → resposta, e responde **qual perfil de currículo está funcionando**.
 
 - **Candidatura:** `cv draft|pdf --job N` **conta como envio** (empresa da vaga, perfil do `--perfil`, ou
-  `geral`). Não enviou? `hermes app cancelar <id>`. Envio feito fora do Quilha: `hermes app add`.
-- **E-mail:** `hermes email sync` lê o Gmail e pergunta a categoria — `avanco`, `pendencia`,
+  `geral`). Não enviou? `quilha app cancelar <id>`. Envio feito fora do Quilha: `quilha app add`.
+- **E-mail:** `quilha email sync` lê o Gmail e pergunta a categoria — `avanco`, `pendencia`,
   `inscricao_confirmada`, `reprovado`, `revisar` (abaixo de 80% de certeza) ou `outro` — e liga à candidatura
   pela empresa, extraída do remetente e do assunto sem LLM. Sem candidatura, nasce uma **pingada** (sem
   perfil) para você resolver com `app perfil`; ambíguo ou sem empresa fica em `email pendentes`. Só e-mail
@@ -443,7 +444,7 @@ Fecha o ciclo vaga → currículo → envio → resposta, e responde **qual perf
   No Gmail o id de cada e-mail é o mesmo da Gmail API: trocar do OAuth para o IMAP não reclassifica nada.
 - `gmail` (padrão) — OAuth próprio, mais trabalhoso, mas aplica as labels e funciona em conta corporativa.
 
-`hermes email testar` confere a conexão sem gastar nada.
+`quilha email testar` confere a conexão sem gastar nada.
 
 Setup do OAuth, uma vez: no Google Cloud, ative a **Gmail API**, configure a tela de consentimento como "External" com
 seu e-mail de usuário de teste, crie um **OAuth client ID** do tipo *Desktop app* e salve o JSON como
@@ -452,7 +453,7 @@ execução o navegador abre para autorizar; `--rotular` pede o escopo de modific
 
 ## Decisões
 
-- **Vault é a verdade, banco é estado.** Se `data/hermes.db` sumir, nada de carreira se perde: `hermes index`
+- **Vault é a verdade, banco é estado.** Se `data/hermes.db` sumir, nada de carreira se perde: `quilha index`
   reconstrói. Por isso `evidence` referencia `nota` + `block_id` como texto, sem chave estrangeira para
   `facts` — a evidência sobrevive ao índice.
 - **Evidência órfã nunca é apagada em silêncio.** Se o block id citado some do vault, vira aviso no `index` e

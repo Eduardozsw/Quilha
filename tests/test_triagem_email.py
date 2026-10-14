@@ -179,7 +179,7 @@ def test_token_expirado_refaz_a_autorizacao_e_grava_so_para_o_dono(tmp_path, mon
 
 
 def test_cli_carrega_sem_o_sdk_do_jev(monkeypatch):
-    """Só `email sync` precisa do Jev; `hermes backup` e o resto não podem quebrar sem ele."""
+    """Só `email sync` precisa do Jev; `quilha backup` e o resto não podem quebrar sem ele."""
     import importlib
     import sys
 

@@ -38,7 +38,7 @@ def test_resolver_fato_por_nota_e_por_block_id(banco):
 
 
 def test_resolver_fato_inexistente(banco):
-    with pytest.raises(RegraViolada, match="hermes index"):
+    with pytest.raises(RegraViolada, match="quilha index"):
         c.resolver_fato(banco, "nao-existe")
 
 
