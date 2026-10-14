@@ -12,6 +12,8 @@ import sqlite3
 import threading
 from typing import TYPE_CHECKING
 
+from hermes.contratos import Contrato
+
 if TYPE_CHECKING:
     from hermes.domain.perfis_cv import PerfilCV
 
@@ -172,6 +174,37 @@ def _entrada_para_o_modelo(
     return "\n".join(linhas) + "\n" + REGRAS_REDACAO
 
 
+ESQUEMA_REDACAO = {
+    "type": "object",
+    "required": ["resumo", "bullets"],
+    "properties": {
+        "resumo": {"type": "string"},
+        "bullets": {"type": "object", "additionalProperties": {"type": "string"},
+                    "description": "referencia (nota.md#block-id) de um fato da entrada → o texto dele reescrito, sem acrescentar nada"},
+    },
+}
+
+
+def _validar_redacao(redacao: dict, selecao: list[dict], status) -> dict:
+    """Reescrita fora da seleção é descartada com aviso; fato não reescrito entra com o texto do vault."""
+    validas = {f["referencia"] for f in selecao}
+    bullets = {}
+    for referencia, texto in (redacao.get("bullets") or {}).items():
+        if referencia in validas and isinstance(texto, str) and texto.strip():
+            bullets[referencia] = texto.strip()
+        else:
+            status.add(f"redação ignorada para referência desconhecida: `{referencia}`")
+
+    faltando = validas - set(bullets)
+    if faltando:
+        status.add(f"{len(faltando)} fato(s) entraram com o texto original do vault")
+
+    return {"resumo": str(redacao.get("resumo") or "").strip(), "bullets": bullets}
+
+
+CONTRATO_REDACAO = Contrato("redacao_cv", ESQUEMA_REDACAO, ("resumo", "bullets"), _validar_redacao)
+
+
 def redigir(
     selecao: list[dict],
     perfil: dict,
@@ -186,31 +219,9 @@ def redigir(
     acrescenta. Fato que ele deixar de reescrever entra com o texto original do vault.
     """
     from hermes import llm
-    from hermes.json_parse import extract_json_object
 
-    bruto = llm.complete(
-        SYSTEM_REDACAO[idioma],
-        _entrada_para_o_modelo(selecao, perfil, idioma, vaga),
-        status=status,
-        model=model,
-        temperature=0.3,
-        json_mode=True,
-    )
-    redacao = extract_json_object(bruto, ("resumo", "bullets"))
-
-    validas = {f["referencia"] for f in selecao}
-    bullets = {}
-    for referencia, texto in (redacao.get("bullets") or {}).items():
-        if referencia in validas and isinstance(texto, str) and texto.strip():
-            bullets[referencia] = texto.strip()
-        else:
-            status.add(f"redação ignorada para referência desconhecida: `{referencia}`")
-
-    faltando = validas - set(bullets)
-    if faltando:
-        status.add(f"{len(faltando)} fato(s) entraram com o texto original do vault")
-
-    return {"resumo": str(redacao.get("resumo") or "").strip(), "bullets": bullets}
+    return llm.pedir_json(SYSTEM_REDACAO[idioma], _entrada_para_o_modelo(selecao, perfil, idioma, vaga),
+                          CONTRATO_REDACAO, selecao, status=status, model=model, temperature=0.3)
 
 
 # -------------------------------------------------------------------- montagem

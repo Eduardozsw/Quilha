@@ -20,7 +20,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any
 
-from hermes import llm
+from hermes import contratos, llm
 from hermes.domain import atividade, candidaturas, competencias, estudos, fatos, vaga
 from hermes.run_status import RunStatus
 
@@ -421,6 +421,8 @@ class Registry:
             return erro("regra_violada", str(e))
         except TypeError as e:
             return erro("argumentos_invalidos", f"argumentos não batem com `{nome}`: {e}")
+        except contratos.RespostaInvalida as e:
+            return erro("resposta_invalida", str(e))
         except ValueError as e:
             return erro("valor_invalido", str(e))
         except sqlite3.Error as e:

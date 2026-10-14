@@ -13,6 +13,8 @@ import re
 import sqlite3
 from datetime import date, timedelta
 
+from hermes.contratos import Contrato
+
 MAX_MINUTOS_SESSAO = 12 * 60  # mais que isso num registro é quase certamente erro de digitação
 SEMANA_RE = re.compile(r"^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$")
 
@@ -255,6 +257,64 @@ def roteiro_entrevista(conn: sqlite3.Connection, candidatura_id: int, *, status=
     return {"candidatura_id": candidatura_id, "lacunas": nomes, "roteiro": itens, "gerado_em": salvo["gerado_em"]}
 
 
+ESQUEMA_PLANO = {
+    "type": "object",
+    "required": ["itens"],
+    "properties": {
+        "objetivo": {"type": "string"},
+        "itens": {"type": "array", "items": {
+            "type": "object", "required": ["competencia", "descricao", "minutos"],
+            "properties": {
+                "competencia": {"type": "string", "description": "slug da lista de lacunas"},
+                "descricao": {"type": "string", "description": "tarefa concreta com entregável"},
+                "recurso": {"type": ["string", "null"]},
+                "minutos": {"type": "integer", "minimum": 1},
+            },
+        }},
+    },
+}
+
+
+def _validar_plano(proposta: dict, contexto: dict, status) -> dict:
+    """Só lacuna de estudo das vagas, com descrição e minutos, sem passar do total disponível."""
+    por_slug, ids = contexto["por_slug"], contexto["ids"]
+    total, minutos_disponiveis = contexto["total"], contexto["minutos"]
+    itens = []
+    for item in proposta.get("itens") or []:
+        if not isinstance(item, dict):
+            continue
+        slug = item.get("competencia")
+        descricao = str(item.get("descricao") or "").strip()
+        try:
+            minutos = int(item.get("minutos"))
+        except (TypeError, ValueError):
+            minutos = 0
+        if slug not in por_slug:
+            status.add(f"item ignorado: `{slug}` não é uma lacuna de estudo das vagas")
+            continue
+        if not descricao or minutos <= 0:
+            status.add(f"item de `{slug}` ignorado: sem descrição ou sem minutos")
+            continue
+        if total + minutos > minutos_disponiveis:
+            status.add(f"item de `{slug}` cortado: passaria de {minutos_disponiveis} minutos")
+            continue
+        total += minutos
+        recurso = item.get("recurso")
+        itens.append({
+            "competencia": slug,
+            "competency_id": ids[slug],
+            # a lacuna que originou o item: a vaga em que a competência é obrigatória, se houver
+            "job_id": (por_slug[slug]["obrigatorio_em"] or list(por_slug[slug]["vagas"]))[0],
+            "descricao": descricao,
+            "recurso": str(recurso).strip() if recurso and str(recurso).lower() != "null" else None,
+            "minutos_alvo": minutos,
+        })
+    return {"objetivo": proposta.get("objetivo"), "itens": itens, "total": total}
+
+
+CONTRATO_PLANO = Contrato("plano_semana", ESQUEMA_PLANO, ("itens",), _validar_plano)
+
+
 def plan_week(
     conn: sqlite3.Connection,
     minutos_disponiveis: int,
@@ -267,7 +327,6 @@ def plan_week(
     """Plano da semana ligado às lacunas das vagas. Uma chamada ao modelo."""
     from hermes import llm
     from hermes.db import store
-    from hermes.json_parse import extract_json_object
     from hermes.run_status import RunStatus
 
     status = status if status is not None else RunStatus()
@@ -301,48 +360,15 @@ def plan_week(
     restante = minutos_disponiveis - total
     proposta: dict = {}
     if a_estudar and restante >= 30:
-        bruto = llm.complete(
-            SYSTEM_PLANO,
-            _entrada_plano(a_estudar, anterior, restante),
-            status=status,
-            model=model,
-            temperature=0.3,
-            json_mode=True,
-        )
-        proposta = extract_json_object(bruto, ("itens",))
+        proposta = llm.pedir_json(SYSTEM_PLANO, _entrada_plano(a_estudar, anterior, restante), CONTRATO_PLANO,
+                                  {"por_slug": {g["slug"]: g for g in a_estudar}, "ids": ids, "total": total,
+                                   "minutos": minutos_disponiveis},
+                                  status=status, model=model, temperature=0.3)
+        itens += proposta["itens"]
+        total = proposta["total"]
     elif a_estudar:
         status.add(f"sobraram {restante} minutos depois dos registros; nada de estudo nesta semana")
 
-    por_slug = {g["slug"]: g for g in a_estudar}
-    for item in proposta.get("itens") or []:
-        if not isinstance(item, dict):
-            continue
-        slug = item.get("competencia")
-        descricao = str(item.get("descricao") or "").strip()
-        try:
-            minutos = int(item.get("minutos"))
-        except (TypeError, ValueError):
-            minutos = 0
-        if slug not in por_slug:
-            status.add(f"item ignorado: `{slug}` não é uma lacuna de estudo das vagas")
-            continue
-        if not descricao or minutos <= 0:
-            status.add(f"item de `{slug}` ignorado: sem descrição ou sem minutos")
-            continue
-        if total + minutos > minutos_disponiveis:
-            status.add(f"item de `{slug}` cortado: passaria de {minutos_disponiveis} minutos")
-            continue
-        total += minutos
-        recurso = item.get("recurso")
-        itens.append({
-            "competencia": slug,
-            "competency_id": ids[slug],
-            # a lacuna que originou o item: a vaga em que a competência é obrigatória, se houver
-            "job_id": (por_slug[slug]["obrigatorio_em"] or list(por_slug[slug]["vagas"]))[0],
-            "descricao": descricao,
-            "recurso": str(recurso).strip() if recurso and str(recurso).lower() != "null" else None,
-            "minutos_alvo": minutos,
-        })
     if not itens:
         raise EstudoRecusado("o modelo não propôs nenhum item válido; nada foi gravado")
 

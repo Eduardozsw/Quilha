@@ -14,6 +14,8 @@ import re
 import sqlite3
 from html.parser import HTMLParser
 
+from hermes.contratos import Contrato
+
 FORMULA = "v1"
 BLOCK_REF_RE = re.compile(r"\^([A-Za-z0-9][A-Za-z0-9_-]*)")
 PESO_TIPO = {"obrigatorio": 2, "desejavel": 1}
@@ -231,25 +233,43 @@ def _limpar_extracao(bruto: dict, slugs: set[str], status) -> dict:
     }
 
 
-def extrair(texto: str, competencias: list[dict], status, model: str | None = None) -> dict:
-    """Uma chamada ao modelo, temperatura 0, JSON estruturado."""
-    from hermes import llm
-    from hermes.json_parse import extract_json_object
+ESQUEMA_EXTRACAO = {
+    "type": "object",
+    "required": ["requisitos"],
+    "properties": {
+        "empresa": {"type": ["string", "null"]},
+        "titulo": {"type": ["string", "null"]},
+        "senioridade": {"enum": ["estagio", "junior", "pleno", "senior", None]},
+        "local": {"enum": ["remoto", "hibrido", "presencial", None]},
+        "requisitos": {"type": "array", "items": {
+            "type": "object", "required": ["texto", "tipo"],
+            "properties": {
+                "texto": {"type": "string"},
+                "tipo": {"enum": ["obrigatorio", "desejavel"]},
+                "competencia_sugerida": {"type": ["string", "null"], "description": "slug da lista ou null"},
+                "confianca": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+            },
+        }},
+    },
+}
 
-    bruto = llm.complete(
-        SYSTEM_EXTRACAO,
-        _entrada_extracao(texto, competencias),
-        status=status,
-        model=model,
-        temperature=0,
-        json_mode=True,
-    )
-    extracao = _limpar_extracao(
-        extract_json_object(bruto, ("requisitos",)), {c["slug"] for c in competencias}, status
-    )
+
+def _validar_extracao(bruto: dict, slugs: set[str], status) -> dict:
+    extracao = _limpar_extracao(bruto, slugs, status)
     if not extracao["requisitos"]:
         status.add("o modelo não extraiu nenhum requisito")
     return extracao
+
+
+CONTRATO_EXTRACAO = Contrato("extracao_vaga", ESQUEMA_EXTRACAO, ("requisitos",), _validar_extracao)
+
+
+def extrair(texto: str, competencias: list[dict], status, model: str | None = None) -> dict:
+    """Uma chamada ao modelo, temperatura 0, validada por `CONTRATO_EXTRACAO`."""
+    from hermes import llm
+
+    return llm.pedir_json(SYSTEM_EXTRACAO, _entrada_extracao(texto, competencias), CONTRATO_EXTRACAO,
+                          {c["slug"] for c in competencias}, status=status, model=model, temperature=0)
 
 
 # ----------------------------------------------------------------- persistência
@@ -696,21 +716,20 @@ def bloqueios_possiveis(itens: list[dict]) -> list[dict]:
     return [i for i in itens if i["tipo"] == "obrigatorio" and not i["competencia"]]
 
 
-def redigir_match(vaga: dict, itens: list[dict], faltas: list[dict], status, model=None) -> dict:
-    """Uma chamada, só texto. Comentário para lacuna que não existe é descartado com aviso."""
-    from hermes import llm
-    from hermes.json_parse import extract_json_object
+ESQUEMA_MATCH = {
+    "type": "object",
+    "required": ["lacunas", "riscos"],
+    "properties": {
+        "lacunas": {"type": "object", "additionalProperties": {"type": "string"},
+                    "description": "requisito_id da lacuna → comentário curto; só cite ^block-id mostrado para ela"},
+        "riscos": {"type": "array", "items": {"type": "string"}},
+    },
+}
 
-    bruto = llm.complete(
-        SYSTEM_MATCH,
-        _entrada_match(vaga, itens, faltas),
-        status=status,
-        model=model,
-        temperature=0.2,
-        json_mode=True,
-    )
-    resposta = extract_json_object(bruto, ("lacunas", "riscos"))
 
+def _validar_match(resposta: dict, contexto: tuple[list[dict], list[dict]], status) -> dict:
+    """Comentário para lacuna que não existe, ou que cita fato que não a sustenta, é descartado com aviso."""
+    itens, faltas = contexto
     por_id = {str(f["requisito_id"]): f for f in faltas}
     # `^12` escrito pelo modelo é o id do requisito, não um block id: não é citação de fato
     ids_requisitos = {str(i["requisito_id"]) for i in itens}
@@ -733,6 +752,17 @@ def redigir_match(vaga: dict, itens: list[dict], faltas: list[dict], status, mod
         comentarios[str(chave)] = texto.strip()
     riscos = [str(r).strip() for r in resposta.get("riscos") or [] if str(r).strip()]
     return {"comentarios": comentarios, "riscos": riscos}
+
+
+CONTRATO_MATCH = Contrato("texto_match", ESQUEMA_MATCH, ("lacunas", "riscos"), _validar_match)
+
+
+def redigir_match(vaga: dict, itens: list[dict], faltas: list[dict], status, model=None) -> dict:
+    """Uma chamada, só texto, validada por `CONTRATO_MATCH`."""
+    from hermes import llm
+
+    return llm.pedir_json(SYSTEM_MATCH, _entrada_match(vaga, itens, faltas), CONTRATO_MATCH, (itens, faltas),
+                          status=status, model=model, temperature=0.2)
 
 
 def match_job(

@@ -268,8 +268,9 @@ class PrecisaDeTexto(Exception):
     vale para exatamente este system + entrada.
     """
 
-    def __init__(self, system: str, user: str, chave: str):
+    def __init__(self, system: str, user: str, chave: str, contrato=None):
         self.system, self.user, self.chave = system, user, chave
+        self.contrato = contrato  # `contratos.Contrato` da resposta pedida; vai ao cliente como esquema
         super().__init__("esta etapa precisa do texto do modelo do cliente")
 
 
@@ -298,6 +299,7 @@ def complete(
     temperature: float = 0.2,
     max_tokens: int = 4096,
     json_mode: bool = False,
+    contrato=None,
 ) -> str:
     """Chamada de turno único, sem ferramenta. Devolve o texto."""
     externas = _externas.get()
@@ -305,7 +307,7 @@ def complete(
         chave = chave_do_pedido(system, user)
         if chave in externas:
             return externas[chave]
-        raise PrecisaDeTexto(system, user, chave)
+        raise PrecisaDeTexto(system, user, chave, contrato)
     message = chat(
         [{"role": "system", "content": system}, {"role": "user", "content": user}],
         status=status,
@@ -318,6 +320,24 @@ def complete(
     if not content:
         raise ValueError("o modelo devolveu conteúdo vazio")
     return content
+
+
+def pedir_json(system: str, user: str, contrato, contexto=None, *, status: RunStatus | None = None,
+               model: str | None = None, temperature: float = 0.2):
+    """Uma resposta em JSON, validada pelo contrato. Vale para o LLM do usuário e para o modelo do cliente MCP."""
+    from hermes.contratos import RespostaInvalida
+    from hermes.json_parse import extract_json_object
+
+    texto = complete(system, user, status=status, model=model, temperature=temperature, json_mode=True,
+                     contrato=contrato)
+    try:
+        bruto = extract_json_object(texto, contrato.chaves)
+    except ValueError:
+        raise RespostaInvalida(
+            f"resposta fora do formato `{contrato.nome}`: precisa ser um objeto JSON com "
+            f"{', '.join(f'`{c}`' for c in contrato.chaves)}"
+        ) from None
+    return contrato.validar(bruto, contexto, status)
 
 
 def check_cost_limit(status: RunStatus, teto_usd: float) -> None:
