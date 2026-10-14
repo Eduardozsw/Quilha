@@ -162,6 +162,59 @@ def check(
     raise typer.Exit(exit_code(problemas, strict))
 
 
+TRECHO_MCP = """
+Para usar pelo Claude Code:
+  claude mcp add quilha -- uvx quilha mcp serve
+
+Claude Desktop / Cursor (JSON de servidores MCP):
+  "quilha": {"command": "uvx", "args": ["quilha", "mcp", "serve"]}
+"""
+
+
+@app.command()
+def init(
+    vault: Optional[Path] = typer.Option(None, help="Pasta do vault (padrão: pergunta, sugerindo VAULT_PATH)."),
+    sem_llm: bool = typer.Option(False, "--sem-llm", help="Não perguntar sobre LLM próprio."),
+) -> None:
+    """Primeiro uso sem o app: vault, competências, índice e, se quiser, um LLM próprio."""
+    from hermes.domain import configuracao, saude
+    from hermes.vault.reader import CAREER_DIR
+
+    cfg = load_config()
+    console.print(f"[dim]dados do Quilha em {caminhos.base()}[/dim]")
+    destino = vault or Path(typer.prompt("Pasta do vault", default=str(cfg.vault_path)))
+    destino = destino.expanduser()
+    if not (destino / CAREER_DIR).is_dir():
+        if not typer.confirm(f"{destino} não tem {CAREER_DIR}/. Criar com uma nota de exemplo?", default=True):
+            console.print(f"Nada feito. Aponte para a pasta que tem {CAREER_DIR}/ ou aceite criar.")
+            raise typer.Exit(1)
+        for criado in configuracao.criar_vault_exemplo(destino):
+            console.print(f"[green]criado[/green] {criado}")
+    cfg = configuracao.gravar(cfg, {"VAULT_PATH": str(destino)})
+
+    conn = store.connect(cfg.db_path)
+    try:
+        criadas = configuracao.inicializar(conn, cfg)
+        status = RunStatus()
+        indice.reindexar(conn, cfg.vault_path, load_denylist(cfg.denylist_path), status)
+        fatos = conn.execute("SELECT count(*) FROM facts").fetchone()[0]
+    finally:
+        conn.close()
+    console.print(f"competências novas: {criadas} · fatos indexados: {fatos}")
+    for aviso in status.warnings:
+        console.print(f"[yellow]aviso:[/yellow] {aviso}")
+
+    if not sem_llm and saude._falta_llm(cfg):
+        console.print("Sem LLM próprio, o modelo do seu cliente MCP escreve os textos e o Quilha valida.")
+        if typer.confirm("Configurar um LLM no Quilha agora?", default=False):
+            modelo = typer.prompt("Modelo (ex.: gpt-4o-mini, ollama/llama3.1)")
+            chave = typer.prompt("Chave da API (vazio para modelo local)", default="", hide_input=True,
+                                 show_default=False)
+            cfg = configuracao.gravar(cfg, {"LLM_MODEL": modelo, "LLM_API_KEY": chave or None})
+            console.print("[green]LLM gravado no .env[/green]")
+    console.print(TRECHO_MCP)
+
+
 @app.command()
 def index(
     vault: Optional[Path] = typer.Option(None, help="Caminho do vault (default: VAULT_PATH)."),
