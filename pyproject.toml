@@ -1,6 +1,6 @@
 [project]
 name = "Quilha"  # como aparece no PyPI; instalação e comando seguem em minúsculo (o PyPI normaliza)
-version = "0.2.0"
+version = "0.2.1"
 description = "Agente de carreira local: avalia vagas, gera currículo só com o que você comprova e acompanha candidaturas"
 requires-python = ">=3.11"
 license = "MIT"
