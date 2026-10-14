@@ -194,12 +194,13 @@ Requer [uv](https://docs.astral.sh/uv/) e Python 3.11+. Todos esses comandos rod
 Para chamar `hermes` de qualquer pasta, sem `uv run`:
 
 ```bash
-uv tool install --editable .
+uv tool install --editable .                                  # usa a configuração e o banco deste checkout
+uv tool install git+https://github.com/Eduardozsw/Quilha      # sem checkout: dados na pasta do app
 ```
 
-Editável de propósito: rodando do código, a configuração, o banco e a denylist são resolvidos contra a raiz do
-repositório (`hermes/caminhos.py`), então uma instalação normal criaria o banco dentro do venv da ferramenta.
-O app desktop e o instalador: `desktop/README.md`.
+Editável, a configuração, o banco e a denylist continuam na raiz do repositório. Instalado sem `--editable`, o
+Quilha usa a pasta de dados do usuário, a mesma do app desktop (`~/.local/share/quilha` no Linux): app e CLI
+veem os mesmos dados (`hermes/caminhos.py`). O app desktop e o instalador: `desktop/README.md`.
 
 ### Comandos
 

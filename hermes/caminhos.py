@@ -3,8 +3,9 @@
 Uma regra só, com o mesmo layout nos três casos (`.env`, `curriculos.yaml`, `data/`, `out/`…):
 
 - `HERMES_HOME` definido: tudo mora lá.
-- Binário congelado (o app instalado): a pasta de dados do usuário no sistema.
-- Senão: a raiz do repositório, como sempre foi.
+- Instalado (o binário do app, ou o pacote via `uv tool install`): a pasta de dados do usuário no
+  sistema — a mesma nos dois, então app e CLI veem os mesmos dados.
+- Senão (rodando do checkout, inclusive `--editable`): a raiz do repositório, como sempre foi.
 """
 
 from __future__ import annotations
@@ -31,10 +32,15 @@ def congelado() -> bool:
     return bool(getattr(sys, "frozen", False))
 
 
+def instalado() -> bool:
+    """Sem `pyproject.toml` ao lado do pacote, o código mora num venv (de ferramenta ou não), não num checkout."""
+    return congelado() or not (PROJECT_ROOT / "pyproject.toml").is_file()
+
+
 def base() -> Path:
     if home := os.getenv("HERMES_HOME"):
         return Path(home).expanduser()
-    if congelado():
+    if instalado():
         from platformdirs import user_data_dir
 
         return Path(user_data_dir(APP, appauthor=False))

@@ -29,6 +29,23 @@ def test_congelado_usa_a_pasta_de_dados_do_usuario(sem_home, monkeypatch, tmp_pa
     assert caminhos.base() == tmp_path / "quilha"
 
 
+def test_instalado_como_pacote_usa_a_pasta_de_dados_do_usuario(sem_home, monkeypatch, tmp_path):
+    """`uv tool install` sem `--editable`: o código mora no venv da ferramenta, que some a cada atualização."""
+    monkeypatch.setattr(caminhos, "PROJECT_ROOT", tmp_path / "site-packages")
+    monkeypatch.setattr("platformdirs.user_data_dir", lambda app, appauthor=None: str(tmp_path / app))
+    assert caminhos.instalado()
+    assert caminhos.base() == tmp_path / "quilha"
+
+
+def test_padroes_vao_dentro_do_pacote():
+    """O wheel leva os padrões em `hermes/dados`, como o binário congelado, para `preparar` ter de onde copiar."""
+    import tomllib
+
+    pyproject = tomllib.loads((caminhos.PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    incluidos = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["force-include"]
+    assert {incluidos[nome] for nome in caminhos.PADROES} == {f"hermes/dados/{nome}" for nome in caminhos.PADROES}
+
+
 def test_env_da_base_e_lido(monkeypatch, tmp_path):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     monkeypatch.delenv("LLM_MODEL", raising=False)

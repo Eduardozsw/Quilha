@@ -34,7 +34,8 @@ def rodar(cfg: Config) -> list[dict]:
 
     itens = [
         {"item": "versão do Python", "ok": True, "detalhe": sys.version.split()[0]},
-        {"item": "modo", "ok": True, "detalhe": "app instalado" if caminhos.congelado() else "código-fonte"},
+        {"item": "modo", "ok": True, "detalhe": "app instalado" if caminhos.congelado()
+         else "pacote instalado" if caminhos.instalado() else "código-fonte"},
         {"item": "base", "ok": True, "detalhe": str(caminhos.base())},
         {"item": "vault", "ok": True,
          "detalhe": f"{cfg.vault_path} ({'existe' if Path(cfg.vault_path).is_dir() else 'não existe'})"},

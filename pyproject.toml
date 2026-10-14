@@ -42,6 +42,14 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["hermes"]
 
+# os mesmos padrões que o binário congelado leva (`caminhos.PADROES`), para `caminhos.preparar` copiar
+[tool.hatch.build.targets.wheel.force-include]
+"competencias.yaml" = "hermes/dados/competencias.yaml"
+"curriculos.example.yaml" = "hermes/dados/curriculos.example.yaml"
+"fontes.example.yaml" = "hermes/dados/fontes.example.yaml"
+"mcp.example.yaml" = "hermes/dados/mcp.example.yaml"
+"denylist.example.yaml" = "hermes/dados/denylist.example.yaml"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
