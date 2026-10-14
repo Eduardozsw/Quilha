@@ -20,6 +20,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any
 
+from hermes import llm
 from hermes.domain import atividade, candidaturas, competencias, estudos, fatos, vaga
 from hermes.run_status import RunStatus
 
@@ -376,7 +377,7 @@ class Registry:
         return next((t for t in self._permitidas() if t.nome == nome), None)
 
     def dispatch(self, nome: str, argumentos: str | dict | None) -> dict:
-        """Executa uma tool call. Nunca levanta: toda falha vira `{"ok": False}`."""
+        """Executa uma tool call. Toda falha vira `{"ok": False}`; só `llm.PrecisaDeTexto` sobe (não é falha)."""
         self.status.tool_calls += 1
         resultado = self._dispatch(nome, argumentos)
         if not resultado["ok"]:
@@ -409,6 +410,8 @@ class Registry:
         kwargs.update({k: getattr(self, k) for k in tool.injeta})
         try:
             return ok(tool.funcao(self.conn, **kwargs))
+        except llm.PrecisaDeTexto:
+            raise  # não é falha: o servidor MCP devolve o pedido ao modelo do cliente
         except competencias.RegraViolada as e:
             # regra de negócio: o modelo precisa ler isto e corrigir o rumo, não tentar de novo igual
             return erro("regra_violada", str(e))

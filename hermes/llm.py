@@ -9,11 +9,14 @@ O `import litellm` é preguiçoso de propósito: ele custa alguns segundos, e `q
 
 from __future__ import annotations
 
+import contextvars
+import hashlib
 import logging
 import os
 import re
 import threading
 from collections.abc import Callable
+from contextlib import contextmanager
 from typing import Any
 
 from hermes.run_status import RunStatus
@@ -257,6 +260,36 @@ def _registrar_parcial(chunks: list, messages: list[dict], status: RunStatus | N
     status.record_usage(int(prompt), int(completion), custo)
 
 
+class PrecisaDeTexto(Exception):
+    """Sem LLM próprio (servidor MCP): quem escreve esta resposta é o modelo do cliente.
+
+    Levantada no lugar da chamada ao provedor, antes de qualquer gravação da tool — as quatro tools que
+    usam modelo chamam `complete` antes de gravar. `chave` identifica o pedido: a resposta do cliente só
+    vale para exatamente este system + entrada.
+    """
+
+    def __init__(self, system: str, user: str, chave: str):
+        self.system, self.user, self.chave = system, user, chave
+        super().__init__("esta etapa precisa do texto do modelo do cliente")
+
+
+_externas: contextvars.ContextVar[dict[str, str] | None] = contextvars.ContextVar("respostas_externas", default=None)
+
+
+def chave_do_pedido(system: str, user: str) -> str:
+    return hashlib.sha256(f"{system}\0{user}".encode("utf-8")).hexdigest()[:16]
+
+
+@contextmanager
+def respostas_externas(respostas: dict[str, str]):
+    """Dentro do bloco, `complete` devolve a resposta guardada para o pedido ou levanta `PrecisaDeTexto`."""
+    token = _externas.set(dict(respostas))
+    try:
+        yield
+    finally:
+        _externas.reset(token)
+
+
 def complete(
     system: str,
     user: str,
@@ -267,6 +300,12 @@ def complete(
     json_mode: bool = False,
 ) -> str:
     """Chamada de turno único, sem ferramenta. Devolve o texto."""
+    externas = _externas.get()
+    if externas is not None:
+        chave = chave_do_pedido(system, user)
+        if chave in externas:
+            return externas[chave]
+        raise PrecisaDeTexto(system, user, chave)
     message = chat(
         [{"role": "system", "content": system}, {"role": "user", "content": user}],
         status=status,
