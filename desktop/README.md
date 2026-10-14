@@ -34,7 +34,7 @@ npm run tauri dev         # a primeira compilação do Rust demora alguns minuto
 Útil para mexer no visual sem compilar Rust:
 
 ```bash
-HERMES_API_TOKEN=dev uv run hermes serve --port 8765        # na raiz do projeto
+HERMES_API_TOKEN=dev uv run quilha serve --port 8765        # na raiz do projeto
 VITE_HERMES_PORTA=8765 VITE_HERMES_TOKEN=dev npx vite       # aqui; abre em localhost:1420
 ```
 

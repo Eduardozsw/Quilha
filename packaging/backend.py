@@ -1,4 +1,4 @@
-"""Ponto de entrada do backend congelado: a mesma CLI (`hermes serve`, `hermes comp seed`…)."""
+"""Ponto de entrada do backend congelado: a mesma CLI (`quilha serve`, `quilha mcp serve`, `quilha comp seed`…)."""
 
 import multiprocessing
 

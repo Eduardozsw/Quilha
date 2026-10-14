@@ -115,6 +115,35 @@ Configuração, banco e currículos gerados ficam na pasta de dados do usuário,
 `HERMES_HOME` muda essa pasta. Se algo não funcionar, `quilha-backend diagnostico` (dentro da pasta do app)
 confere caminhos, banco e PDF sem gastar nada; o log do backend fica na pasta de logs do app.
 
+## Usar pelo Claude Code, Cursor ou Claude Desktop (MCP)
+
+Sem abrir o app: o Quilha vira um servidor MCP e o seu cliente conversa com ele, sobre o mesmo vault e o
+mesmo banco do app.
+
+```bash
+uvx quilha init                                   # vault, competências e índice (uma vez)
+claude mcp add quilha -- uvx quilha mcp serve     # Claude Code
+```
+
+Claude Desktop e Cursor, no JSON de servidores MCP:
+
+```json
+"quilha": { "command": "uvx", "args": ["quilha", "mcp", "serve"] }
+```
+
+Já tem o app instalado? Aponte para o binário dele: `"command": "<pasta do app>/backend/quilha-backend",
+"args": ["mcp", "serve"]`.
+
+**Sem LLM próprio** (o padrão por aqui): nas tools que precisam de texto — ler os requisitos de uma vaga,
+o comentário do match, o plano da semana, a redação do currículo — o Quilha faz a parte do código, manda o
+pedido ao modelo do seu cliente e valida a resposta antes de gravar: bullet de fato que não está na
+seleção não entra, competência inventada não vira competência, a nota da vaga continua calculada pelo
+código. A qualidade do texto depende do modelo do cliente. Prefere que o Quilha use um modelo próprio? `quilha init`
+pergunta, ou defina `LLM_MODEL` e `LLM_API_KEY` no `.env`.
+
+O cliente pede permissão antes de cada tool que grava (as de leitura vão marcadas como leitura). O
+servidor reindexa o vault sozinho quando uma nota muda. Log: `data/mcp-serve.log`.
+
 ## Primeiros passos
 
 Na primeira abertura, o app pede a pasta do vault. Se você ainda não tem uma, ele cria uma com uma nota de
@@ -207,6 +236,8 @@ veem os mesmos dados (`hermes/caminhos.py`). O app desktop e o instalador: `desk
 
 | Comando | O que faz | Custo |
 |---|---|---|
+| `quilha init [--vault PASTA] [--sem-llm]` | Primeiro uso sem o app: vault, competências, índice e, se quiser, um LLM próprio | zero |
+| `quilha mcp serve` | Servidor MCP por stdio, para Claude Code, Cursor e Claude Desktop | zero sem LLM próprio |
 | `quilha check [--strict]` | Valida frontmatter, block ids, número sem fonte, denylist e evidência órfã | zero |
 | `quilha index` | Reconstrói `facts` a partir do vault, numa transação | zero |
 | `quilha stats` | Fatos indexados, competências e últimas execuções | zero |
