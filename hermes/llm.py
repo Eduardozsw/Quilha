@@ -84,6 +84,8 @@ def current_model() -> str:
 def _litellm():
     import litellm  # import preguiçoso: ver a docstring do módulo
 
+    # sem o "Give Feedback / Get Help" que o LiteLLM imprime em todo erro: em `mcp serve` o stdout é do protocolo
+    litellm.suppress_debug_info = True
     return litellm
 
 
@@ -337,7 +339,18 @@ def pedir_json(system: str, user: str, contrato, contexto=None, *, status: RunSt
             f"resposta fora do formato `{contrato.nome}`: precisa ser um objeto JSON com "
             f"{', '.join(f'`{c}`' for c in contrato.chaves)}"
         ) from None
+    for chave in contrato.chaves:
+        # nulo segue tolerado (as regras tratam como vazio); tipo trocado não tem item para aproveitar
+        tipo = _TIPOS_JSON.get(contrato.esquema.get("properties", {}).get(chave, {}).get("type"))
+        if tipo is not None and bruto[chave] is not None and not isinstance(bruto[chave], tipo):
+            raise RespostaInvalida(
+                f"resposta fora do formato `{contrato.nome}`: `{chave}` precisa ser "
+                f"{contrato.esquema['properties'][chave]['type']}, veio {type(bruto[chave]).__name__}"
+            )
     return contrato.validar(bruto, contexto, status)
+
+
+_TIPOS_JSON = {"object": dict, "array": list, "string": str}
 
 
 def check_cost_limit(status: RunStatus, teto_usd: float) -> None:

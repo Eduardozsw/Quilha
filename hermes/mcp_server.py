@@ -251,6 +251,7 @@ def servir(cfg) -> None:
     servidor = criar_servidor(cfg)
 
     async def rodar():
+        # o SDK aponta o fd 1 para o stderr enquanto serve: print de biblioteca não chega ao protocolo
         async with stdio_server() as (leitura, escrita):
             await servidor.run(leitura, escrita, servidor.create_initialization_options())
 

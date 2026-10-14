@@ -41,3 +41,14 @@ def test_registry_deixa_o_pedido_subir(conn):
     with llm.respostas_externas({}):
         with pytest.raises(llm.PrecisaDeTexto):
             registry.dispatch("t", {})
+
+
+def test_litellm_nao_imprime_ajuda_no_stdout():
+    """`mcp serve` usa o stdout para o protocolo: o print de "Give Feedback / Get Help" do LiteLLM o quebraria.
+    Em subprocesso porque o conftest troca `_litellm` por um falso."""
+    import subprocess
+    import sys
+
+    saida = subprocess.run([sys.executable, "-c", "from hermes import llm; print(llm._litellm().suppress_debug_info)"],
+                           capture_output=True, text=True, check=True).stdout
+    assert saida.strip().splitlines()[-1] == "True"

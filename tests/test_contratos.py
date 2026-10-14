@@ -91,3 +91,22 @@ def test_pedido_externo_leva_o_esquema():
             llm.pedir_json("s", "u", vaga.CONTRATO_EXTRACAO, {"python"})
     assert pedido.value.contrato is vaga.CONTRATO_EXTRACAO
     assert pedido.value.contrato.esquema["required"] == ["requisitos"]
+
+
+@pytest.mark.parametrize("contrato, resposta, contexto", [
+    (curriculo.CONTRATO_REDACAO, {"resumo": "r", "bullets": ["a"]}, []),
+    (curriculo.CONTRATO_REDACAO, {"resumo": {"a": 1}, "bullets": {}}, []),
+    (vaga.CONTRATO_MATCH, {"lacunas": ["x"], "riscos": []}, ([], [])),
+    (vaga.CONTRATO_MATCH, {"lacunas": {}, "riscos": "abc"}, ([], [])),
+    (vaga.CONTRATO_EXTRACAO, {"requisitos": {"a": 1}}, set()),
+    (estudos.CONTRATO_PLANO, {"itens": "fazer"}, {}),
+])
+def test_chave_principal_de_tipo_errado_e_recusada(contrato, resposta, contexto):
+    """Inutilizável no todo: o cliente MCP recebe `resposta_invalida` e pode reenviar, em vez de um erro de provedor."""
+    with pytest.raises(RespostaInvalida, match="formato"):
+        _com(contrato, resposta, contexto)
+
+
+def test_chave_principal_nula_continua_tolerada():
+    limpo, _ = _com(curriculo.CONTRATO_REDACAO, {"resumo": None, "bullets": None}, [])
+    assert limpo == {"resumo": "", "bullets": {}}

@@ -131,9 +131,6 @@ Claude Desktop e Cursor, no JSON de servidores MCP:
 "quilha": { "command": "uvx", "args": ["quilha", "mcp", "serve"] }
 ```
 
-Já tem o app instalado? Aponte para o binário dele: `"command": "<pasta do app>/backend/quilha-backend",
-"args": ["mcp", "serve"]`.
-
 **Sem LLM próprio** (o padrão por aqui): nas tools que precisam de texto — ler os requisitos de uma vaga,
 o comentário do match, o plano da semana, a redação do currículo — o Quilha faz a parte do código, manda o
 pedido ao modelo do seu cliente e valida a resposta antes de gravar: bullet de fato que não está na
