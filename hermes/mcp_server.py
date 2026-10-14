@@ -237,3 +237,21 @@ def criar_servidor(cfg) -> Server:
 
     return Server("quilha", version=_versao(), instructions=INSTRUCOES,
                   on_list_tools=listar, on_call_tool=chamar)
+
+
+def servir(cfg) -> None:
+    """stdio até o cliente fechar. Log em `data/mcp-serve.log`: o stdout é do protocolo."""
+    import anyio
+    from mcp.server.stdio import stdio_server
+
+    destino = Path(cfg.db_path).parent / "mcp-serve.log"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(filename=destino, level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s", force=True)
+    servidor = criar_servidor(cfg)
+
+    async def rodar():
+        async with stdio_server() as (leitura, escrita):
+            await servidor.run(leitura, escrita, servidor.create_initialization_options())
+
+    anyio.run(rodar)

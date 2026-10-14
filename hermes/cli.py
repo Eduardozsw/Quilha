@@ -74,7 +74,7 @@ study_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(study_app, name="study")
-mcp_app = typer.Typer(help="Servidores MCP: tools externas no chat (ex.: um servidor de notícias).",
+mcp_app = typer.Typer(help="MCP: servidores externos no chat (`list`, `call`) e o Quilha como servidor (`serve`).",
                       no_args_is_help=True)
 app.add_typer(mcp_app, name="mcp")
 email_app = typer.Typer(help="E-mails de processo seletivo: triagem com o Jev e ligação às candidaturas.",
@@ -1239,6 +1239,14 @@ def mcp_call(
             _recusa(exc)
         console.print_json(json.dumps(resultado, ensure_ascii=False, default=str))
         ex.delivered = True
+
+
+@mcp_app.command("serve")
+def mcp_serve() -> None:
+    """Servidor MCP por stdio, para Claude Code, Cursor e Claude Desktop (`claude mcp add quilha -- quilha mcp serve`)."""
+    from hermes import mcp_server
+
+    mcp_server.servir(load_config())
 
 
 def _tabela_competencias(linhas: list[dict], titulo: str) -> Table:
