@@ -1,6 +1,7 @@
 name: Release
 
-# Tag `v*` gera os instaladores dos três sistemas e anexa a um release em rascunho (publicar é à mão).
+# Tag `v*` gera os instaladores dos três sistemas e anexa a um release em rascunho (publicar é à mão),
+# e publica o pacote `Quilha` no PyPI (Trusted Publishing, environment `pypi`).
 # Rodar à mão (workflow_dispatch) só gera os instaladores como artefatos, sem release.
 
 on:
@@ -107,3 +108,34 @@ jobs:
         with:
           name: quilha-${{ matrix.os }}
           path: desktop/src-tauri/target/release/bundle/
+
+  pypi-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Versão do pyproject bate com a tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          versao=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          test "v$versao" = "${GITHUB_REF_NAME}" || { echo "pyproject $versao ≠ tag ${GITHUB_REF_NAME}"; exit 1; }
+      - run: uv sync --locked && uv run pytest -q -p no:warnings
+      - run: uv build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pypi-dist
+          path: dist/
+
+  pypi-publish:
+    needs: pypi-build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # Trusted Publishing: sem token guardado
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pypi-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

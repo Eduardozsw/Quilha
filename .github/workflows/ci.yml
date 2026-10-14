@@ -20,3 +20,9 @@ jobs:
         run: |
           uv run python -c "from hermes.db import store; store.connect('ci.db')"
           grep -v '^\.' hermes/sql/queries.sql | sqlite3 ci.db
+      - name: Wheel instala num ambiente limpo e roda
+        run: |
+          uv build --wheel --out-dir dist
+          uv venv /tmp/limpo
+          uv pip install --python /tmp/limpo dist/quilha-*.whl
+          HERMES_HOME=/tmp/quilha-home /tmp/limpo/bin/quilha diagnostico
