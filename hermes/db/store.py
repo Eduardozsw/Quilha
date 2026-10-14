@@ -33,6 +33,9 @@ def connect(db_path: str | Path, *, uma_thread: bool = True) -> sqlite3.Connecti
     conn = sqlite3.connect(caminho, check_same_thread=uma_thread)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")  # o SQLite não liga sozinho
+    # app, CLI e servidor MCP abrem o mesmo arquivo: em WAL, leitura em curso não trava a gravação do outro
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 5000")
     apply_schema(conn)
     return conn
 

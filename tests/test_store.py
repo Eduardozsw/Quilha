@@ -359,3 +359,23 @@ def test_migracao_010_abre_titulo_e_meta_sem_perder_a_conversa(tmp_path):
     conn.execute("DELETE FROM agent_sessions WHERE id = 1")  # o CASCADE continua valendo
     assert conn.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0] == 0
     conn.close()
+
+
+def test_escrita_nao_espera_leitura_aberta_em_outro_processo(tmp_path):
+    """App e servidor MCP abrem o mesmo banco: uma leitura em curso não pode travar a gravação do outro."""
+    caminho = tmp_path / "hermes.db"
+    leitor = store.connect(caminho)
+    escritor = store.connect(caminho)
+    escritor.execute("PRAGMA busy_timeout = 200")  # sem WAL, falharia em 200 ms em vez de esperar 5 s
+    leitor.execute("BEGIN")
+    leitor.execute("SELECT count(*) FROM facts").fetchone()
+    store.reindex_facts(escritor, [{"nota": "a.md", "block_id": "x", "tipo": "project",
+                                    "entidade": "a", "texto": "t"}])
+    leitor.rollback()
+    assert leitor.execute("SELECT count(*) FROM facts").fetchone()[0] == 1
+
+
+def test_banco_em_wal_com_espera(tmp_path):
+    conn = store.connect(tmp_path / "hermes.db")
+    assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+    assert conn.execute("PRAGMA busy_timeout").fetchone()[0] >= 5000
