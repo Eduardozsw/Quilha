@@ -409,6 +409,7 @@ def chat(
             model=model,
             denylist=tuple(load_denylist(cfg.denylist_path)),
             repos_conhecidos=tuple(atividade.descobrir_repos(cfg.repos_dir)),
+            cfg=cfg,
             sem_confirmacao=frozenset() if sim else cfg.sem_confirmacao,
         )
         on_evento = _mostrador(verboso)

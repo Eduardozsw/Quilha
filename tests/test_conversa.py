@@ -35,6 +35,8 @@ def test_toda_ferramenta_que_pede_confirmacao_tem_cartao(banco):
         "git_activity": {"dias": 3},
         "confirm_study_signals": {"sinais": [1, 2], "minutos": 60, "o_que_fez": "RRF", "slug": "python"},
         "plan_week": {"minutos_disponiveis": 300},
+        "cv_generate": {"idiomas": ["pt", "en"], "job_id": 1},
+        "cv_pdf": {"versao_id": 1},
     }
     pedem = {t.nome for t in TOOLS if t.pede_confirmacao}
     assert pedem == set(argumentos)

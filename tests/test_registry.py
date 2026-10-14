@@ -29,6 +29,9 @@ def test_schemas_descrevem_todas_as_tools(registry):
         "list_applications",
         "application_detail",
         "profile_scores",
+        "cv_profiles",
+        "cv_generate",
+        "cv_pdf",
     }
     for schema in registry.schemas():
         assert schema["type"] == "function"
@@ -128,6 +131,7 @@ def test_tool_declara_se_escreve():
     assert escrevem == {
         "link_evidence", "assess_competency", "parse_job", "match_job",
         "log_study", "git_activity", "confirm_study_signals", "plan_week",
+        "cv_generate", "cv_pdf",
     }
     assert all(t.pede_confirmacao for t in TOOLS if t.escreve), "toda escrita passa pelo guarda"
     assert isinstance(TOOLS[0], Tool)

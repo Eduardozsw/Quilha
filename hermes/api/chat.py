@@ -277,6 +277,7 @@ def rodar_turno(cfg: Config, sessao_id: int, texto: str, confirmacoes: Confirmac
                 model=model,
                 denylist=tuple(load_denylist(cfg.denylist_path)),
                 repos_conhecidos=tuple(atividade.descobrir_repos(cfg.repos_dir)),
+                cfg=cfg,
                 sem_confirmacao=cfg.sem_confirmacao,
             )
             loop.descartar_parcial(sessao, texto)

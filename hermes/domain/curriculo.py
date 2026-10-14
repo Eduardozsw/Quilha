@@ -555,15 +555,17 @@ def gerar(
                 conn.execute("UPDATE cv_versions SET conteudo = ?, palavras = ?, estrutura = ? WHERE id = ?",
                              (markdown, contar_palavras(markdown), json.dumps(estrutura, ensure_ascii=False),
                               guardada["id"]))
+        desta_versao = cur.lastrowid if guardada is None else guardada["id"]
         # a candidatura aponta para a versão em português, se pedida (em qualquer ordem); senão, a primeira
         if versao_id is None or idioma == "pt":
-            versao_id = cur.lastrowid if guardada is None else guardada["id"]
+            versao_id = desta_versao
         caminho.write_text(markdown, encoding="utf-8")
         (saida / f"{base}.json").write_text(
             json.dumps(estrutura, ensure_ascii=False, indent=2), encoding="utf-8")
         resultados.append(
             {
                 "idioma": idioma,
+                "versao_id": desta_versao,
                 "caminho": caminho,
                 "palavras": contar_palavras(markdown),
                 "fatos": referencias,

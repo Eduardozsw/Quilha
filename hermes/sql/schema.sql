@@ -297,3 +297,14 @@ CREATE TABLE IF NOT EXISTS estado_app (
     chave TEXT PRIMARY KEY,
     valor TEXT NOT NULL
 );
+
+-- Servidor MCP sem LLM próprio: o pedido que espera o texto do modelo do cliente (`submit_draft`).
+-- `respostas` = {chave do pedido: texto}; vale 24 h e é apagado quando a tool termina.
+CREATE TABLE IF NOT EXISTS rascunhos_mcp (
+    id TEXT PRIMARY KEY,
+    tool TEXT NOT NULL,
+    argumentos TEXT NOT NULL,
+    pendente TEXT NOT NULL,
+    respostas TEXT NOT NULL DEFAULT '{}',
+    criado_em TEXT NOT NULL
+);

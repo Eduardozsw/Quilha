@@ -28,6 +28,9 @@ _ROTULOS: dict[str, tuple[str, str, str, str]] = {
     "list_applications": ("Consultando", "Consultou", "consultar", "as candidaturas"),
     "application_detail": ("Abrindo", "Abriu", "abrir", "a candidatura"),
     "profile_scores": ("Comparando", "Comparou", "comparar", "os currículos"),
+    "cv_profiles": ("Consultando", "Consultou", "consultar", "os perfis de currículo"),
+    "cv_generate": ("Gerando", "Gerou", "gerar", "o currículo"),
+    "cv_pdf": ("Gerando", "Gerou", "gerar", "o PDF do currículo"),
 }
 
 
@@ -154,6 +157,21 @@ def _montar(conn, nome: str, args: dict) -> dict:
         return {"titulo": "Gravar este plano?", "objeto": "Plano", "genero": "ms", "campos": campos,
                 "resumo": f"plano da semana {semana}" if semana else "plano da próxima semana",
                 "concordancia": "ms"}
+    if nome == "cv_generate":
+        idiomas = ", ".join(args.get("idiomas") or ["pt"])
+        campos = [{"rotulo": "Idiomas", "valor": idiomas},
+                  {"rotulo": "Perfil", "valor": str(args.get("perfil") or "geral")}]
+        if args.get("job_id") is not None:
+            campos.append({"rotulo": "Vaga (registra a candidatura)", "valor": _vaga(conn, args["job_id"])})
+        if args.get("forcar"):
+            campos.append({"rotulo": "Redigir de novo", "valor": "sim"})
+        return {"titulo": "Gerar este currículo?", "objeto": "Currículo", "genero": "ms", "campos": campos,
+                "resumo": f"currículo em {idiomas}", "concordancia": "ms"}
+    if nome == "cv_pdf":
+        versao = str(args.get("versao_id"))
+        return {"titulo": "Gerar o PDF?", "objeto": "PDF", "genero": "ms",
+                "campos": [{"rotulo": "Versão do currículo", "valor": versao}],
+                "resumo": f"PDF da versão {versao}", "concordancia": "ms"}
     campos = [{"rotulo": k, "valor": str(v)} for k, v in args.items()]
     return {"titulo": f"Gravar com `{nome}`?", "objeto": "Gravação", "genero": "fs",
             "campos": campos or [{"rotulo": "Ferramenta", "valor": nome}], "resumo": f"`{nome}`",

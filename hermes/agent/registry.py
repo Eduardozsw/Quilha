@@ -18,11 +18,14 @@ from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hermes import contratos, llm
-from hermes.domain import atividade, candidaturas, competencias, estudos, fatos, vaga
+from hermes.domain import atividade, candidaturas, competencias, curriculo, estudos, fatos, perfil, perfis_cv, vaga
 from hermes.run_status import RunStatus
+
+if TYPE_CHECKING:
+    from hermes.config import Config
 
 
 @dataclass(frozen=True)
@@ -96,6 +99,39 @@ def _notas_perfis(conn: sqlite3.Connection) -> dict:
     return {**candidaturas.notas_por_perfil(conn, date.today()),
             "regra": f"nota 0–5 pela taxa de avanço sobre envios maturados ({candidaturas.MATURACAO_DIAS} dias "
                      f"ou com resposta); sem nota abaixo de {candidaturas.MIN_ENVIOS} maturados"}
+
+
+def _cv_perfis(conn: sqlite3.Connection, cfg) -> list[dict]:
+    todos = perfis_cv.carregar(cfg.perfis_cv_path)
+    if not todos:
+        return []
+    perfis_cv.validar(conn, todos)
+    return [{"perfil": g["perfil"], "cargo": g["cargo"], "foco": g["foco"], "versoes": len(g["versoes"])}
+            for g in curriculo.galeria(conn, todos) if g["perfil"] is not None and g["cargo"] is not None]
+
+
+def _cv_gerar(conn: sqlite3.Connection, cfg, status, model, idiomas: list[str] | None = None,
+              perfil: str | None = None, job_id: int | None = None, forcar: bool = False) -> dict:
+    recorte = None
+    if perfil:
+        todos = perfis_cv.carregar(cfg.perfis_cv_path)
+        perfis_cv.validar(conn, todos)
+        recorte = perfis_cv.buscar(todos, perfil)
+    resultados = curriculo.gerar(
+        conn, cfg.vault_path, cfg.saida_dir, status, idiomas=tuple(idiomas or ["pt"]), model=model,
+        job_id=job_id, perfil=recorte, forcar=forcar, nomes=perfis_cv.carregar_nomes(cfg.perfis_cv_path),
+    )
+    return {"versoes": [
+        {"idioma": r["idioma"], "versao_id": r["versao_id"], "caminho": str(r["caminho"]),
+         "palavras": r["palavras"], "fatos": r["fatos"], "reaproveitado": r["reaproveitado"],
+         "markdown": Path(r["caminho"]).read_text(encoding="utf-8")}
+        for r in resultados
+    ]}
+
+
+def _cv_pdf(conn: sqlite3.Connection, cfg, versao_id: int) -> dict:
+    feito = curriculo.pdf_da_versao(conn, versao_id, perfis_cv.carregar(cfg.perfis_cv_path))
+    return {"caminho": feito["caminho"], "paginas": feito["paginas"]}
 
 
 TOOLS: tuple[Tool, ...] = (
@@ -340,6 +376,42 @@ TOOLS: tuple[Tool, ...] = (
         parametros=_objeto({}),
         funcao=_notas_perfis,
     ),
+    Tool(
+        nome="cv_profiles",
+        descricao="Perfis de currículo de `curriculos.yaml` (recortes por cargo) e quantas versões cada um já tem.",
+        parametros=_objeto({}),
+        funcao=_cv_perfis,
+        injeta=("cfg",),
+    ),
+    Tool(
+        nome="cv_generate",
+        descricao=(
+            "Gera o currículo a partir dos fatos que sustentam nível 2 ou mais, com uma seleção só para todos os "
+            "idiomas. Cada bullet vem de um fato do vault; nada é acrescentado. Seleção já redigida é "
+            "reaproveitada sem custo. Com `job_id`, o currículo é sob medida e a candidatura é registrada como "
+            "enviada (como na CLI). Devolve o Markdown e o `versao_id` de cada idioma, para `cv_pdf`."
+        ),
+        parametros=_objeto({
+            "idiomas": {"type": "array", "items": {"type": "string", "enum": ["pt", "en"]},
+                        "description": "padrão ['pt']"},
+            "perfil": {"type": "string", "description": "slug de `cv_profiles`"},
+            "job_id": {"type": "integer"},
+            "forcar": {"type": "boolean", "description": "redigir de novo mesmo com seleção igual"},
+        }),
+        funcao=_cv_gerar,
+        escreve=True,
+        pede_confirmacao=True,
+        injeta=("cfg", "status", "model"),
+    ),
+    Tool(
+        nome="cv_pdf",
+        descricao="Gera o PDF de uma versão do currículo (`versao_id` de `cv_generate`) e devolve o caminho do arquivo.",
+        parametros=_objeto({"versao_id": {"type": "integer"}}, ["versao_id"]),
+        funcao=_cv_pdf,
+        escreve=True,
+        pede_confirmacao=True,
+        injeta=("cfg",),
+    ),
 )
 
 
@@ -362,6 +434,7 @@ class Registry:
     model: str | None = None
     denylist: tuple[str, ...] = ()
     repos_conhecidos: tuple[Path, ...] = ()
+    cfg: "Config | None" = None
     sem_confirmacao: frozenset[str] = frozenset()
     tools: tuple[Tool, ...] = TOOLS
 
@@ -417,7 +490,9 @@ class Registry:
             return erro("regra_violada", str(e))
         except vaga.VagaRecusada as e:
             return erro("vaga_recusada", str(e))
-        except (estudos.EstudoRecusado, atividade.AtividadeRecusada, candidaturas.CandidaturaRecusada) as e:
+        except (estudos.EstudoRecusado, atividade.AtividadeRecusada, candidaturas.CandidaturaRecusada,
+                curriculo.SemFatos, curriculo.CurriculoRecusado, perfis_cv.PerfilInvalido,
+                perfil.PerfilAusente) as e:
             return erro("regra_violada", str(e))
         except TypeError as e:
             return erro("argumentos_invalidos", f"argumentos não batem com `{nome}`: {e}")
