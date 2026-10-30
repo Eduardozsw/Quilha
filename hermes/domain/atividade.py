@@ -33,6 +33,8 @@ def _git(repo: Path, *args: str) -> str:
         ["git", "-C", str(repo), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",  # git fala UTF-8; o padrão do Windows (cp1252) embaralha acento em commit
+        errors="replace",
         timeout=GIT_TIMEOUT,
         check=False,
     )

@@ -115,7 +115,7 @@ class CaixaGmail:
             novo = True
         if novo:
             pasta.mkdir(parents=True, exist_ok=True)
-            token.write_text(creds.to_json())
+            token.write_text(creds.to_json(), encoding="utf-8")
             token.chmod(0o600)  # guarda o refresh token do Gmail
         self._gmail = build("gmail", "v1", credentials=creds)
         self._labels: dict[str, str] | None = None
