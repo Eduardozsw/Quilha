@@ -222,7 +222,7 @@ def criar_vault_exemplo(destino: str | Path) -> list[str]:
             continue
         alvo.parent.mkdir(parents=True, exist_ok=True)
         alvo.write_text(conteudo, encoding="utf-8")
-        criados.append(str(relativo))
+        criados.append(relativo.as_posix())
     return criados
 
 
