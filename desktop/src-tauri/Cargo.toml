@@ -1,6 +1,6 @@
 [package]
 name = "quilha-desktop"
-version = "0.2.1"
+version = "0.2.2"
 description = "Quilha: app desktop sobre a API local"
 authors = ["Carlos Eduardo da Silva Souto Maior"]
 license = "MIT"
