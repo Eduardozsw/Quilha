@@ -615,14 +615,13 @@ def test_chat_mostra_a_resposta_enquanto_chega_sem_repetir(cfg_tmp, provedor, mo
 
 
 def test_chat_ctrl_c_para_o_turno_sem_sair(cfg_tmp, provedor, mocker):
-    import os
     import signal
 
     from tests.streaming import chunk
 
     def chunks():
         yield chunk("Comparando ")
-        os.kill(os.getpid(), signal.SIGINT)
+        signal.raise_signal(signal.SIGINT)  # os.kill no Windows encerra o processo em vez de sinalizar
         yield chunk("as vagas.", finish="stop")
 
     mocker.patch.object(provedor, "completion", return_value=chunks())
