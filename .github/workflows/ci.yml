@@ -27,8 +27,10 @@ jobs:
           uv run python -c "from hermes.db import store; store.connect('ci.db')"
           grep -v '^\.' hermes/sql/queries.sql | sqlite3 ci.db
       - name: Wheel instala num ambiente limpo e roda
+        shell: bash  # no Windows o padrão é PowerShell
         run: |
           uv build --wheel --out-dir dist
-          uv venv /tmp/limpo
-          uv pip install --python /tmp/limpo dist/quilha-*.whl
-          HERMES_HOME=/tmp/quilha-home /tmp/limpo/bin/quilha diagnostico
+          uv venv "$RUNNER_TEMP/limpo"
+          uv pip install --python "$RUNNER_TEMP/limpo" dist/quilha-*.whl
+          bin="$RUNNER_TEMP/limpo/bin"; [ -d "$bin" ] || bin="$RUNNER_TEMP/limpo/Scripts"
+          HERMES_HOME="$RUNNER_TEMP/quilha-home" "$bin/quilha" diagnostico
