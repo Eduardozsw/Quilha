@@ -166,6 +166,8 @@ def em_sao_paulo():
     desfazer o compartilhado desligaria antes da hora o isolamento da home (HERMES_HOME e afins)."""
     import time
 
+    if not hasattr(time, "tzset"):
+        pytest.skip("time.tzset não existe no Windows: o fuso do processo não muda pela variável TZ")
     with pytest.MonkeyPatch.context() as mp:
         mp.setenv("TZ", "America/Sao_Paulo")
         time.tzset()

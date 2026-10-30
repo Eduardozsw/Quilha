@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from types import SimpleNamespace
 
 import pytest
@@ -174,8 +175,9 @@ def test_token_expirado_refaz_a_autorizacao_e_grava_so_para_o_dono(tmp_path, mon
 
     gmail.CaixaGmail(tmp_path)
     token = tmp_path / "token_readonly.json"
-    assert token.read_text() == '{"novo": true}'
-    assert token.stat().st_mode & 0o777 == 0o600
+    assert token.read_text(encoding="utf-8") == '{"novo": true}'
+    if os.name != "nt":
+        assert token.stat().st_mode & 0o777 == 0o600
 
 
 def test_cli_carrega_sem_o_sdk_do_jev(monkeypatch):

@@ -332,7 +332,7 @@ def test_markdown_do_plano_e_o_que_foi_gravado():
 def test_writer_so_acrescenta(tmp_path):
     writer.acrescentar(tmp_path, "Diario", "2026-W40", "primeiro", titulo="Semana 2026-W40")
     r = writer.acrescentar(tmp_path, "Diario", "2026-W40", "segundo")
-    texto = (tmp_path / "Diario" / "2026-W40.md").read_text()
+    texto = (tmp_path / "Diario" / "2026-W40.md").read_text(encoding="utf-8")
     assert texto == "# Semana 2026-W40\n\nprimeiro\n\nsegundo\n"
     assert r["criada"] is False
 

@@ -74,7 +74,7 @@ def test_index_grava_fatos_e_run(vault, tmp_path):
 
 def test_index_sem_block_id_indexa_o_resto_e_fica_partial(vault, tmp_path):
     nota = vault / "Carreira" / "Projetos" / "Mirante.md"
-    nota.write_text(nota.read_text().replace(" ^pipeline", ""), encoding="utf-8")
+    nota.write_text(nota.read_text(encoding="utf-8").replace(" ^pipeline", ""), encoding="utf-8")
     db = tmp_path / "hermes.db"
     resultado = runner.invoke(app, ["index", "--vault", str(vault), "--db", str(db)])
     assert resultado.exit_code == 0
@@ -92,7 +92,7 @@ def test_index_bloqueado_pela_denylist(vault, tmp_path, monkeypatch):
     lista.write_text("termos:\n  - SistemaInterno\n", encoding="utf-8")
     monkeypatch.setenv("HERMES_DENYLIST", str(lista))
     nota = vault / "Carreira" / "Projetos" / "Mirante.md"
-    nota.write_text(nota.read_text() + "\nUsa o SistemaInterno.\n", encoding="utf-8")
+    nota.write_text(nota.read_text(encoding="utf-8") + "\nUsa o SistemaInterno.\n", encoding="utf-8")
 
     db = tmp_path / "hermes.db"
     resultado = runner.invoke(app, ["index", "--vault", str(vault), "--db", str(db)])
@@ -409,7 +409,7 @@ def test_study_log_e_week(cfg_tmp, banco):
     assert "40 min em `sql`" in r.output
 
     semana = runner.invoke(app, ["study", "week"])
-    assert "40 min declarados (sem plano para a semana)" in semana.output
+    assert "40 min declarados (sem plano para a semana)" in " ".join(semana.output.split())
 
 
 def test_study_log_invalido_sai_com_erro(cfg_tmp, banco):
@@ -468,7 +468,7 @@ def test_study_plan_grava_no_diario_so_com_confirmacao(cfg_tmp, banco, mocker):
     aceito = runner.invoke(app, ["study", "plan", "-m", "120", "--semana", "2026-W40", "--substituir"],
                            input="y\n")
     assert aceito.exit_code == 0, aceito.output
-    nota = (cfg_tmp.vault_path / "Diario" / "2026-W40.md").read_text()
+    nota = (cfg_tmp.vault_path / "Diario" / "2026-W40.md").read_text(encoding="utf-8")
     assert "- [ ] (60 min, `sql`) JOINs" in nota
 
 

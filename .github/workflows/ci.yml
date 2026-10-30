@@ -6,7 +6,12 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # o app tem instalador para os três: os testes rodam nos três
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -17,6 +22,7 @@ jobs:
       - name: Testes
         run: uv run pytest
       - name: Schema aplica e consultas rodam
+        if: runner.os == 'Linux'
         run: |
           uv run python -c "from hermes.db import store; store.connect('ci.db')"
           grep -v '^\.' hermes/sql/queries.sql | sqlite3 ci.db
