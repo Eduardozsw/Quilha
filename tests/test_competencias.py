@@ -15,7 +15,7 @@ def test_seed_cria_e_e_idempotente(conn, seed_yaml):
 def test_seed_atualiza_peso_sem_duplicar(conn, seed_yaml):
     c.seed(conn, seed_yaml)
     seed_yaml.write_text(
-        seed_yaml.read_text().replace("peso: 3", "peso: 1"), encoding="utf-8"
+        seed_yaml.read_text(encoding="utf-8").replace("peso: 3", "peso: 1"), encoding="utf-8"
     )
     c.seed(conn, seed_yaml)
     python = c.buscar(conn, "python")

@@ -21,14 +21,14 @@ def test_vault_valido_so_avisa_nota_sem_fatos(vault):
 
 def test_fato_sem_block_id_e_erro(vault, tmp_path):
     nota = vault / "Carreira" / "Projetos" / "Mirante.md"
-    nota.write_text(nota.read_text().replace(" ^pipeline", ""), encoding="utf-8")
+    nota.write_text(nota.read_text(encoding="utf-8").replace(" ^pipeline", ""), encoding="utf-8")
     problemas = _problemas(vault)
     assert any(p.nivel == "erro" and "block id" in p.mensagem for p in problemas)
 
 
 def test_block_id_repetido_na_mesma_nota(vault):
     nota = vault / "Carreira" / "Projetos" / "Mirante.md"
-    nota.write_text(nota.read_text().replace("^operacao", "^pipeline"), encoding="utf-8")
+    nota.write_text(nota.read_text(encoding="utf-8").replace("^operacao", "^pipeline"), encoding="utf-8")
     problemas = _problemas(vault)
     assert any("repetido" in p.mensagem for p in problemas)
 
@@ -36,7 +36,7 @@ def test_block_id_repetido_na_mesma_nota(vault):
 def test_numero_sem_fonte_vira_aviso(vault):
     nota = vault / "Carreira" / "Projetos" / "Mirante.md"
     nota.write_text(
-        nota.read_text().replace(
+        nota.read_text(encoding="utf-8").replace(
             "- Pipeline batch diário em Python que coleta feeds RSS",
             "- 108 testes automatizados com pytest",
         ),
@@ -54,7 +54,7 @@ def test_numero_com_N_e_data_nao_avisa(vault):
 
 def test_frontmatter_invalido_e_erro(vault):
     nota = vault / "Carreira" / "Experiencias" / "Acme.md"
-    nota.write_text(nota.read_text().replace("type: experience", "type: outro"), encoding="utf-8")
+    nota.write_text(nota.read_text(encoding="utf-8").replace("type: experience", "type: outro"), encoding="utf-8")
     problemas = _problemas(vault)
     assert any("`type`" in p.mensagem for p in problemas)
 
@@ -63,7 +63,7 @@ def test_denylist_bloqueia(vault, tmp_path):
     lista = tmp_path / "denylist.yaml"
     lista.write_text("termos:\n  - SistemaInterno\n", encoding="utf-8")
     nota = vault / "Carreira" / "Projetos" / "Mirante.md"
-    nota.write_text(nota.read_text() + "\nUsa o sistemainterno da empresa.\n", encoding="utf-8")
+    nota.write_text(nota.read_text(encoding="utf-8") + "\nUsa o sistemainterno da empresa.\n", encoding="utf-8")
     problemas = check_notes(read_notes(vault), load_denylist(lista))
     assert any(p.nivel == "erro" and "denylist" in p.mensagem for p in problemas)
 

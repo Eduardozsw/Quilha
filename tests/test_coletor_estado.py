@@ -41,7 +41,7 @@ def test_sem_fontes_yaml(api, fontes):
 def test_criar_a_partir_do_exemplo_uma_vez(api, fontes):
     r = api.post("/api/coletor/fontes/exemplo")
     assert r.status_code == 200 and r.json() == {"caminho": str(fontes)}
-    assert "fontes:" in fontes.read_text()
+    assert "fontes:" in fontes.read_text(encoding="utf-8")
     assert api.post("/api/coletor/fontes/exemplo").status_code == 409
 
 
@@ -55,7 +55,7 @@ def test_criar_a_partir_do_exemplo_uma_vez(api, fontes):
 ])
 def test_fontes_yaml_invalido_vira_erro_e_nao_500(api, fontes, conteudo, trecho):
     """Review Focus 3."""
-    fontes.write_text(conteudo)
+    fontes.write_text(conteudo, encoding="utf-8")
     r = api.get("/api/coletor/estado")
     assert r.status_code == 200
     corpo = r.json()
@@ -63,7 +63,7 @@ def test_fontes_yaml_invalido_vira_erro_e_nao_500(api, fontes, conteudo, trecho)
 
 
 def test_fontes_com_a_fila_e_a_ultima_coleta(api, fontes, tmp_path):
-    fontes.write_text(FONTES)
+    fontes.write_text(FONTES, encoding="utf-8")
     conn = store.connect(tmp_path / "hermes.db")
     conn.execute("INSERT INTO fila_coleta (fonte, board, estado, tentativas, proximo_em, ultimo_erro, atualizado_em)"
                  " VALUES ('gupy', 'maresaude', 'falhou', 3, '2026-10-10T13:00:00+00:00', 'HTTP 404',"

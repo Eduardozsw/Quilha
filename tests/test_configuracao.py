@@ -1,5 +1,6 @@
 """Configuração pelo app: `.env` da base, chave que nunca volta e vault de exemplo."""
 
+import os
 import stat
 
 import pytest
@@ -44,7 +45,8 @@ def test_chave_nunca_volta_e_env_fica_0600(api, home):
     assert estado["llm"]["modelo"] == "gpt-4o" and estado["llm"]["chave_definida"] is True
     env = home / ".env"
     assert "LLM_API_KEY=sk-segredo" in env.read_text(encoding="utf-8")
-    assert stat.S_IMODE(env.stat().st_mode) == 0o600
+    if os.name != "nt":  # no Windows o modo POSIX não existe; quem protege é a ACL da pasta do usuário
+        assert stat.S_IMODE(env.stat().st_mode) == 0o600
 
 
 def test_gravar_preserva_o_resto_do_env_e_string_vazia_apaga(api, home):
@@ -119,6 +121,7 @@ def test_sugestao_de_vault_nunca_e_uma_pasta_que_existe(tmp_path, monkeypatch):
     from hermes.domain import configuracao
 
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() no Windows
     (tmp_path / "Quilha").mkdir()
     (tmp_path / "Quilha" / "minha-nota.md").write_text("não mexa", encoding="utf-8")
     cfg = load_config(vault_path=tmp_path / "nenhum")
@@ -132,7 +135,7 @@ def test_limite_de_custo_aceita_virgula_e_vale_sem_reiniciar(api, home):
     r = api.put("/api/config", json={"hermes_max_cost_usd": "1,5"})
     assert r.status_code == 200
     assert r.json()["llm"]["limite_usd"] == 1.5
-    assert "HERMES_MAX_COST_USD=1.5" in (home / ".env").read_text()
+    assert "HERMES_MAX_COST_USD=1.5" in (home / ".env").read_text(encoding="utf-8")
     assert api.app.state.cfg.max_cost_usd == 1.5
 
 
@@ -141,7 +144,7 @@ def test_limite_de_custo_invalido_e_recusado_sem_gravar(api, home, valor):
     r = api.put("/api/config", json={"hermes_max_cost_usd": valor})
     assert r.status_code == 422
     env = home / ".env"
-    assert "HERMES_MAX_COST_USD" not in (env.read_text() if env.exists() else "")
+    assert "HERMES_MAX_COST_USD" not in (env.read_text(encoding="utf-8") if env.exists() else "")
 
 
 @pytest.mark.parametrize("valor,ok", [("30", True), ("365", True), ("0", False), ("400", False), ("dez", False)])
@@ -233,7 +236,7 @@ def test_limite_e_dias_vazios_sao_recusados_e_nao_apagam(api, home, campo, chave
     api.put("/api/config", json={"hermes_max_cost_usd": "1,5", "email_dias": "60"})
     r = api.put("/api/config", json={campo: ""})
     assert r.status_code == 422
-    env = (home / ".env").read_text()
+    env = (home / ".env").read_text(encoding="utf-8")
     assert "HERMES_MAX_COST_USD=1.5" in env and "EMAIL_DIAS=60" in env
 
 

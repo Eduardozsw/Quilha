@@ -38,7 +38,7 @@ def test_secao_apos_fatos_nao_entra(vault):
 
 def test_linha_do_fato_aponta_para_o_arquivo(vault):
     nota = parse_note(vault / "Carreira" / "Projetos" / "Mirante.md", vault)
-    linhas = (vault / "Carreira" / "Projetos" / "Mirante.md").read_text().splitlines()
+    linhas = (vault / "Carreira" / "Projetos" / "Mirante.md").read_text(encoding="utf-8").splitlines()
     assert "^pipeline" in linhas[nota.facts[0].linha - 1]
 
 
